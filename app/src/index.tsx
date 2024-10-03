@@ -4,7 +4,8 @@ import './index.css';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import reportWebVitals from './reportWebVitals';
 import { Layout } from './components/Layout';
-import { Work } from './pages/Work';
+import { Login } from './pages/Login';
+import { Dashboard } from './pages/Dashboard';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -14,8 +15,9 @@ root.render(
     {/*<App />*/}
     <HashRouter>
       <Routes>
-        <Route path='/' element={<Layout />}>
-          <Route path='/work' element={<Work />}></Route>
+        <Route path="/" element={<Layout />}>
+          <Route path="/login" element={<Login />}></Route>
+          <Route path="/dashboard" element={<Dashboard />}></Route>
         </Route>
       </Routes>
     </HashRouter>
