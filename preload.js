@@ -1,5 +1,6 @@
-const { contextBridge } = require('electron')
+const { contextBridge, ipcRenderer } = require('electron');
+const path = require('path');
 
-contextBridge.exposeInMainWorld('versions', {
+contextBridge.exposeInMainWorld('electron', {
 
-})
+});
