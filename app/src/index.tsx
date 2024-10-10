@@ -1,11 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes, Navigate } from 'react-router-dom';
 import reportWebVitals from './reportWebVitals';
-import { Layout } from './components/Layout';
+import { Layout } from './components/navBar/Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { Absence } from './pages/Absence';
+import { Employees } from './pages/Employees';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -16,8 +18,12 @@ root.render(
     <HashRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />}></Route>
           <Route path="/dashboard" element={<Dashboard />}></Route>
+          <Route path="/absence" element={<Absence />}></Route>
+          <Route path="/employees" element={<Employees />}></Route>
+
         </Route>
       </Routes>
     </HashRouter>
