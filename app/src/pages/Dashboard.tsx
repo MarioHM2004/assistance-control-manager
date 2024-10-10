@@ -1,4 +1,4 @@
-import AssistTable from '../components/AssistTable'
+import AssistTable from '../components/tables/AssistTable'
 
 export const Dashboard: React.FC = () => {
   return (
