@@ -17,7 +17,7 @@ export const SideBar: React.FC = () => {
           {/* Sidebar content here */}
           <img
             className="max-w-40 max-h-40 pb-4"
-            src="/diselLogo.png"
+            src={process.env.PUBLIC_URL + '/diselLogo.png'}
             alt="logo de Disel Studio SL"
           />
           <p className="font-bold pb-2">ACM</p>

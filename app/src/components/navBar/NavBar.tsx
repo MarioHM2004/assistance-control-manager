@@ -20,7 +20,7 @@ export const NavBar: React.FC = () => {
           </svg>
         </label>
       </div>
-      <img className="h-full w-auto max-h-10"src="/diselLogo.png" alt="logo de Disel Studio SL" />
+      <img className="h-full w-auto max-h-10" src={process.env.PUBLIC_URL + '/diselLogo.png'}  alt="logo de Disel Studio SL" />
       <div className="flex-1">
         <Link to="/" className="btn btn-ghost text-xl hover:bg-transparent active:bg-transparent focus:bg-transparent">
         <div className='text-primary font-bold'>
