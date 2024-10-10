@@ -4,7 +4,6 @@ const url = require('url')
 
 function createWindow () {
   const mainWindow = new BrowserWindow({
-    title: 'ocm',
     width: 1000,
     height: 600,
     minWidth: 800,
