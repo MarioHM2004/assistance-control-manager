@@ -12,15 +12,15 @@ module.exports = {
       'lofi',
       {
         diselStudio: {
-          primary: "#8B4513",   // Keep the brown-red color for buttons and action elements
-          secondary: "#7A7A7A", // Darken the gray for better contrast
-          accent: "#3C3C3C",    // Darker accent color for borders and shadows
-          neutral: "#CD853F",   // Adjust the brick-red to be more orange for warmth
-          "base-100": "#FDFDFD", // Make the background closer to pure white for cleanliness
-          info: "#5A9BD4",      // Slightly lighten the blue for info elements
-          success: "#3CB371",   // Brighten the green for success notifications
-          warning: "#FFA07A",   // A softer orange for warnings
-          error: "#DC143C",     // A brighter red for errors
+          primary: '#7A3E2B',      // Marrón oscuro del logo
+          secondary: '#C26134',    // Anaranjado oscuro
+          accent: '#F0A25C',       // Anaranjado claro
+          neutral: '#EAEAEA',      // Gris claro
+          'base-100': '#F5F5F5',   // Fondo claro
+          info: '#89CFF0',         // Azul claro
+          warning: '#F4A261',      // Amarillo suave
+          error: '#E76F51',        // Rojo claro
+          success: '#2A9D8F',      // Verde oscuro
         },
       },
     ],
