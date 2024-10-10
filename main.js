@@ -7,6 +7,9 @@ function createWindow () {
     title: 'ocm',
     width: 1000,
     height: 600,
+    minWidth: 800,
+    minHeight: 600,
+    icon: path.join(__dirname, '/app/public/diselLogo.png'),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: true,
