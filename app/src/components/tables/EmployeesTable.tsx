@@ -7,12 +7,8 @@ interface Employee {
 }
 
 export const EmployeesTable: React.FC = () => {
-  const [data, setData] = useState<Employee[]>([]);
-
-  const [filters, setFilters] = useState({
-    name: '',
-  });
-
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [filters, setFilters] = useState({ name: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(
@@ -25,42 +21,34 @@ export const EmployeesTable: React.FC = () => {
         const result = await window.electron.ipcRenderer.invoke(
           'get-employees'
         );
-        setData(result);
+        setEmployees(result);
       } catch (error) {
         console.error('Error fetching employees:', error);
       }
     };
-
     fetchEmployees();
   }, []);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({
-      ...filters,
-      [e.target.name]: e.target.value,
-    });
+    setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  const filteredData = data.filter((item) =>
-    item.NAME.toLowerCase().includes(filters.name.toLowerCase())
+  const filteredEmployees = employees.filter((employee) =>
+    employee.NAME.toLowerCase().includes(filters.name.toLowerCase())
   );
 
   const handleAddEmployee = async () => {
     try {
-      const newEmployee = { name: newEmployeeName };
-      const result = await window.electron.ipcRenderer.invoke(
-        'add-employees',
-        newEmployee
-      );
-
+      const result = await window.electron.ipcRenderer.invoke('add-employees', {
+        name: newEmployeeName,
+      });
       if (result > 0) {
-
-        const addedEmployee = { EMPLOYEE_ID: result, NAME: newEmployeeName };
-        setData((prevData) => [...prevData, addedEmployee]);
+        setEmployees([
+          ...employees,
+          { EMPLOYEE_ID: result, NAME: newEmployeeName },
+        ]);
+        resetModalState();
       }
-
-      setNewEmployeeName('');
-      setIsModalOpen(false);
     } catch (error) {
       console.error('Error adding employee:', error);
     }
@@ -72,10 +60,9 @@ export const EmployeesTable: React.FC = () => {
         'delete-employees',
         id
       );
-
       if (result > 0) {
-        setData((prevData) =>
-          prevData.filter((employee) => employee.EMPLOYEE_ID !== id)
+        setEmployees(
+          employees.filter((employee) => employee.EMPLOYEE_ID !== id)
         );
       }
     } catch (error) {
@@ -91,32 +78,32 @@ export const EmployeesTable: React.FC = () => {
 
   const handleUpdateEmployee = async () => {
     try {
-      const updatedEmployee = {
-        id: editingEmployeeId,
-        name: newEmployeeName,
-      };
-
       const result = await window.electron.ipcRenderer.invoke(
         'edit-employees',
-        updatedEmployee
+        {
+          id: editingEmployeeId,
+          name: newEmployeeName,
+        }
       );
-
       if (result > 0) {
-        setData((prevData) =>
-          prevData.map((employee) =>
+        setEmployees(
+          employees.map((employee) =>
             employee.EMPLOYEE_ID === editingEmployeeId
               ? { ...employee, NAME: newEmployeeName }
               : employee
           )
         );
+        resetModalState();
       }
-
-      setNewEmployeeName('');
-      setIsModalOpen(false);
-      setEditingEmployeeId(null);
     } catch (error) {
-      console.error('Error editing employee:', error);
+      console.error('Error updating employee:', error);
     }
+  };
+
+  const resetModalState = () => {
+    setNewEmployeeName('');
+    setIsModalOpen(false);
+    setEditingEmployeeId(null);
   };
 
   return (
@@ -136,9 +123,7 @@ export const EmployeesTable: React.FC = () => {
           <thead className="sticky top-0 bg-base-300">
             <tr>
               <th className="w-1/5">
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-base">ID</span>
-                </div>
+                <span className="font-extrabold text-base">ID</span>
               </th>
               <th className="w-2/5">
                 <div className="flex items-center justify-between">
@@ -160,23 +145,23 @@ export const EmployeesTable: React.FC = () => {
           </thead>
 
           <tbody>
-            {filteredData.length > 0 ? (
-              filteredData.map((item) => (
-                <tr key={item.EMPLOYEE_ID} className="hover:bg-base-100">
-                  <td className="text-base">{item.EMPLOYEE_ID}</td>
-                  <td className="text-base">{item.NAME}</td>
+            {filteredEmployees.length > 0 ? (
+              filteredEmployees.map((employee) => (
+                <tr key={employee.EMPLOYEE_ID} className="hover:bg-base-100">
+                  <td className="text-base">{employee.EMPLOYEE_ID}</td>
+                  <td className="text-base">{employee.NAME}</td>
                   <td>
                     <button
                       className="btn btn-error btn-sm mr-2 text-base"
                       onClick={() =>
-                        handleEditEmployee(item.EMPLOYEE_ID, item.NAME)
+                        handleEditEmployee(employee.EMPLOYEE_ID, employee.NAME)
                       }
                     >
                       Editar
                     </button>
                     <button
                       className="btn btn-error btn-sm text-base"
-                      onClick={() => handleDeleteEmployee(item.EMPLOYEE_ID)}
+                      onClick={() => handleDeleteEmployee(employee.EMPLOYEE_ID)}
                     >
                       Eliminar
                     </button>
@@ -196,7 +181,7 @@ export const EmployeesTable: React.FC = () => {
 
       <Modal
         open={isModalOpen}
-        onClickBackdrop={() => setIsModalOpen(false)}
+        onClickBackdrop={resetModalState}
         className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
       >
         <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
@@ -222,13 +207,7 @@ export const EmployeesTable: React.FC = () => {
             >
               {editingEmployeeId ? 'Actualizar' : 'Añadir'}
             </button>
-            <button
-              className="btn btn-secondary"
-              onClick={() => {
-                setIsModalOpen(false);
-                setEditingEmployeeId(null);
-              }}
-            >
+            <button className="btn btn-secondary" onClick={resetModalState}>
               Cancelar
             </button>
           </Modal.Actions>
