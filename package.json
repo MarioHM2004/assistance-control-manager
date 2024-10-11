@@ -4,9 +4,12 @@
   "description": "Assistance control manager",
   "main": "main.js",
   "scripts": {
+    "rebuild": "electron-rebuild",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
-    "start:dev": "npx electronmon --trace-warnings ."
+    "start:dev": "npx electronmon --trace-warnings .",
+    "postinstall": "electron-rebuild"
+
   },
   "keywords": [
     "electron",
@@ -16,7 +19,11 @@
   "author": "Mario Herranz",
   "license": "MIT",
   "dependencies": {
+    "better-sqlite3": "^11.3.0",
     "electron": "^32.1.2",
     "react-daisyui": "^5.0.5"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.0"
   }
 }
