@@ -1,9 +1,9 @@
-import AssistTable from '../components/tables/AssistTable'
+import AbsenceTable from '../components/tables/AbsenceTable'
 
 export const Dashboard: React.FC = () => {
   return (
     <div>
-      <AssistTable />
+      <AbsenceTable />
     </div>
   )
 }
