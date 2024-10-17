@@ -4,16 +4,22 @@ import { Modal } from 'react-daisyui';
 interface Employee {
   EMPLOYEE_ID: number;
   NAME: string;
+  STATUS_ID: number;
 }
 
 export const EmployeesTable: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [filters, setFilters] = useState({ name: '' });
+  const [filters, setFilters] = useState({ name: '' , status: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEmployeeName, setNewEmployeeName] = useState('');
+  const [newEmployeeStatus, setNewEmployeeStatus] = useState<number>(1);
   const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(
     null
   );
+  const statusOptions = [
+    { id: 1, label: 'Activo' },
+    { id: 2, label: 'Inactivo' }
+  ];
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -41,11 +47,12 @@ export const EmployeesTable: React.FC = () => {
     try {
       const result = await window.electron.ipcRenderer.invoke('add-employees', {
         name: newEmployeeName,
+        status_id: newEmployeeStatus,
       });
       if (result > 0) {
         setEmployees([
           ...employees,
-          { EMPLOYEE_ID: result, NAME: newEmployeeName },
+          { EMPLOYEE_ID: result, NAME: newEmployeeName, STATUS_ID: newEmployeeStatus },
         ]);
         resetModalState();
       }
@@ -70,9 +77,10 @@ export const EmployeesTable: React.FC = () => {
     }
   };
 
-  const handleEditEmployee = (id: number, name: string) => {
+  const handleEditEmployee = (id: number, name: string, statusId: number) => {
     setEditingEmployeeId(id);
     setNewEmployeeName(name);
+    setNewEmployeeStatus(statusId);
     setIsModalOpen(true);
   };
 
@@ -83,13 +91,14 @@ export const EmployeesTable: React.FC = () => {
         {
           id: editingEmployeeId,
           name: newEmployeeName,
+          status_id: newEmployeeStatus
         }
       );
       if (result > 0) {
         setEmployees(
           employees.map((employee) =>
             employee.EMPLOYEE_ID === editingEmployeeId
-              ? { ...employee, NAME: newEmployeeName }
+              ? { ...employee, NAME: newEmployeeName, STATUS_ID: newEmployeeStatus }
               : employee
           )
         );
@@ -102,6 +111,7 @@ export const EmployeesTable: React.FC = () => {
 
   const resetModalState = () => {
     setNewEmployeeName('');
+    setNewEmployeeStatus(1);
     setIsModalOpen(false);
     setEditingEmployeeId(null);
   };
@@ -139,6 +149,19 @@ export const EmployeesTable: React.FC = () => {
                 </div>
               </th>
               <th className="w-1/5">
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-base">Estado</span>
+                <input
+                    type="text"
+                    placeholder="Filtrar por estado"
+                    className="input input-bordered input-sm ml-2"
+                    name="status"
+                    value={filters.status}
+                    onChange={handleFilterChange}
+                  />
+                  </div>
+              </th>
+              <th className="w-1/5">
                 <span className="font-extrabold text-base">Acciones</span>
               </th>
             </tr>
@@ -150,11 +173,14 @@ export const EmployeesTable: React.FC = () => {
                 <tr key={employee.EMPLOYEE_ID} className="hover:bg-base-100">
                   <td className="text-base">{employee.EMPLOYEE_ID}</td>
                   <td className="text-base">{employee.NAME}</td>
+                  <td className="text-base">
+                    {statusOptions.find(status => status.id === employee.STATUS_ID)?.label || 'Desconocido'}
+                  </td>
                   <td>
                     <button
                       className="btn btn-error btn-sm mr-2 text-base"
                       onClick={() =>
-                        handleEditEmployee(employee.EMPLOYEE_ID, employee.NAME)
+                        handleEditEmployee(employee.EMPLOYEE_ID, employee.NAME, employee.STATUS_ID)
                       }
                     >
                       Editar
@@ -170,7 +196,7 @@ export const EmployeesTable: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={3} className="text-center">
+                <td colSpan={4} className="text-center">
                   No se encontraron resultados
                 </td>
               </tr>
@@ -196,13 +222,22 @@ export const EmployeesTable: React.FC = () => {
               value={newEmployeeName}
               onChange={(e) => setNewEmployeeName(e.target.value)}
             />
+            <select
+              className="select select-bordered w-full mt-4"
+              value={newEmployeeStatus}
+              onChange={(e) => setNewEmployeeStatus(Number(e.target.value))}
+            >
+              {statusOptions.map((status) => (
+                <option key={status.id} value={status.id}>
+                  {status.label}
+                </option>
+              ))}
+            </select>
           </Modal.Body>
           <Modal.Actions className="flex justify-end pt-4">
             <button
               className="btn btn-primary mr-2"
-              onClick={
-                editingEmployeeId ? handleUpdateEmployee : handleAddEmployee
-              }
+              onClick={editingEmployeeId ? handleUpdateEmployee : handleAddEmployee}
               disabled={!newEmployeeName.trim()}
             >
               {editingEmployeeId ? 'Actualizar' : 'Añadir'}
