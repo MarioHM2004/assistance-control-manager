@@ -7,7 +7,20 @@ function handleGetAbsences(db) {
     }
 
     try {
-      const stmt = db.prepare('SELECT * FROM Absences');
+      const query = `
+        SELECT
+          Employees.NAME as nombre,
+          AbsenceTypes.TYPE as tipoFalta,
+          Absences.DESCRIPTION as descripcion,
+          Absences.HOURS_ABSENT as horas,
+          Absences.ABSENCE_DATE as fecha,
+          Employees.STATUS_ID as estadoEmpleado
+        FROM Absences
+        JOIN Employees ON Absences.EMPLOYEE_ID = Employees.EMPLOYEE_ID
+        JOIN AbsenceTypes ON Absences.ABSENCE_TYPE_ID = AbsenceTypes.ABSENCE_TYPE_ID
+        ORDER BY Absences.ABSENCE_DATE DESC
+      `;
+      const stmt = db.prepare(query);
       const absences = stmt.all();
       return absences;
     } catch (error) {
@@ -16,6 +29,7 @@ function handleGetAbsences(db) {
     }
   });
 }
+
 
 function handleCreateAbsence(db) {
   ipcMain.handle('create-absence', (event, absence) => {

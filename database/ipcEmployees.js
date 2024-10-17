@@ -23,11 +23,15 @@ function handleAddEmployees(db) {
       throw new Error("Database not initialized");
     }
 
+    if (!employee || !employee.name || !employee.status_id) {
+      throw new Error("Missing required fields: name or status_id");
+    }
+
     try {
       const stmt = db.prepare(
-        "INSERT INTO Employees (NAME) VALUES (@name)"
+        "INSERT INTO Employees (NAME, STATUS_ID) VALUES (@name, @status_id)"
       );
-      const result = stmt.run(employee);
+      const result = stmt.run({ name: employee.name, status_id: employee.status_id });
       return result.changes;
     } catch (error) {
       console.error("Error adding employee:", error.message);
@@ -42,11 +46,15 @@ function handleEditEmployees(db) {
       throw new Error("Database not initialized");
     }
 
+    if (!employee || !employee.id || !employee.name || !employee.status_id) {
+      throw new Error("Missing required fields: id, name or status_id");
+    }
+
     try {
       const stmt = db.prepare(
-        "UPDATE Employees SET NAME = @name WHERE EMPLOYEE_ID = @id"
+        "UPDATE Employees SET NAME = @name, STATUS_ID = @status_id WHERE EMPLOYEE_ID = @id"
       );
-      const result = stmt.run(employee);
+      const result = stmt.run({ id: employee.id, name: employee.name, status_id: employee.status_id });
       return result.changes;
     } catch (error) {
       console.error("Error editing employee:", error.message);
