@@ -2,23 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 interface Absence {
-  nombre: string;
-  tipoFalta: string;
-  descripcion: string;
-  horas: number;
-  fecha: string;
-  estado: string;
+  name: string;
+  absenceType: string;
+  description: string;
+  hoursAbsent: number;
+  date: string;
 }
 
 const AssistTable: React.FC = () => {
   const [data, setData] = useState<Absence[]>([]);
   const [filters, setFilters] = useState({
-    nombre: '',
-    tipoFalta: '',
-    descripcion: '',
-    fecha: '',
-    horas: '',
-    estado: 'Todos',
+    name: '',
+    absenceType: '',
+    description: '',
+    hoursAbsent: '',
+    date: '',
   });
 
   useEffect(() => {
@@ -47,7 +45,7 @@ const AssistTable: React.FC = () => {
 
   const filteredData = data.filter((item) => {
     const matchesFilters = Object.keys(filters).every((key) => {
-      if (key === 'horas' || key === 'estado') {
+      if (key === 'hoursAbsent') {
         return true;
       }
       return item[key as keyof typeof filters]
@@ -56,13 +54,10 @@ const AssistTable: React.FC = () => {
         .includes(filters[key as keyof typeof filters].toLowerCase());
     });
 
-    const matchesHoras =
-      !filters.horas || item.horas === parseFloat(filters.horas);
+    const matchesHoursAbsent =
+      !filters.hoursAbsent || item.hoursAbsent === parseFloat(filters.hoursAbsent);
 
-    const matchesEstado =
-      filters.estado === 'Todos' || item.estado === filters.estado;
-
-    return matchesFilters && matchesHoras && matchesEstado;
+    return matchesFilters && matchesHoursAbsent;
   });
 
   return (
@@ -72,46 +67,6 @@ const AssistTable: React.FC = () => {
           <div>
             <h1 className="text-xl font-bold pr-4">Tablero</h1>
           </div>
-          <details className="dropdown">
-            <summary className="btn m-1 rounded-lg flex items-center text-base btn-secondary">
-              <span className="mr-2">Estado</span>
-              <svg
-                className="w-4 h-4"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.3 7.3a1 1 0 011.4 0L10 10.6l3.3-3.3a1 1 0 011.4 1.4l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 010-1.4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </summary>
-            <ul className="menu dropdown-content bg-base-200 rounded-box z-[1] w-52 p-2 shadow">
-              <li>
-                <button
-                  onClick={() => setFilters({ ...filters, estado: 'Activo' })}
-                >
-                  Activos
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setFilters({ ...filters, estado: 'Inactivo' })}
-                >
-                  Inactivos
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setFilters({ ...filters, estado: 'Todos' })}
-                >
-                  Todos
-                </button>
-              </li>
-            </ul>
-          </details>
         </div>
         <div>
           <Link
@@ -145,8 +100,8 @@ const AssistTable: React.FC = () => {
                     type="text"
                     placeholder="Filtro"
                     className="input input-bordered input-sm w-36 ml-2"
-                    name="nombre"
-                    value={filters.nombre}
+                    name="name"
+                    value={filters.name}
                     onChange={handleFilterChange}
                   />
                 </div>
@@ -160,8 +115,8 @@ const AssistTable: React.FC = () => {
                     type="text"
                     placeholder="Filtro"
                     className="input input-bordered input-sm w-36 ml-2"
-                    name="tipoFalta"
-                    value={filters.tipoFalta}
+                    name="absenceType"
+                    value={filters.absenceType}
                     onChange={handleFilterChange}
                   />
                 </div>
@@ -173,8 +128,8 @@ const AssistTable: React.FC = () => {
                     type="text"
                     placeholder="Filtro"
                     className="input input-bordered input-sm w-36 ml-2"
-                    name="descripcion"
-                    value={filters.descripcion}
+                    name="description"
+                    value={filters.description}
                     onChange={handleFilterChange}
                   />
                 </div>
@@ -188,8 +143,8 @@ const AssistTable: React.FC = () => {
                     type="number"
                     placeholder="Filtro"
                     className="input input-bordered input-sm w-32"
-                    name="horas"
-                    value={filters.horas}
+                    name="hoursAbsent"
+                    value={filters.hoursAbsent}
                     onChange={handleFilterChange}
                   />
                 </div>
@@ -201,8 +156,8 @@ const AssistTable: React.FC = () => {
                     type="text"
                     placeholder="Filtro"
                     className="input input-bordered input-sm w-36 ml-2"
-                    name="fecha"
-                    value={filters.fecha}
+                    name="date"
+                    value={filters.date}
                     onChange={handleFilterChange}
                   />
                 </div>
@@ -216,20 +171,20 @@ const AssistTable: React.FC = () => {
                   <td>
                     <div className="whitespace-nowrap max-w-xs">
                       <div className="overflow-x-auto text-base">
-                        {item.nombre}
+                        {item.name}
                       </div>
                     </div>
                   </td>
-                  <td className="text-base">{item.tipoFalta}</td>
+                  <td className="text-base">{item.absenceType}</td>
                   <td>
                     <div className="whitespace-nowrap max-w-xs">
                       <div className="overflow-x-auto text-base">
-                        {item.descripcion}
+                        {item.description}
                       </div>
                     </div>
                   </td>
-                  <td className="text-base">{item.horas}</td>
-                  <td className="text-base">{item.fecha}</td>
+                  <td className="text-base">{item.hoursAbsent}</td>
+                  <td className="text-base">{item.date}</td>
                 </tr>
               ))
             ) : (
