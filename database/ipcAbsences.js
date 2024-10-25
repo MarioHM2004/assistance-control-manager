@@ -9,12 +9,12 @@ function handleGetAbsences(db) {
     try {
       const query = `
         SELECT
-          Employees.NAME as nombre,
-          AbsenceTypes.TYPE as tipoFalta,
-          Absences.DESCRIPTION as descripcion,
-          Absences.HOURS_ABSENT as horas,
-          Absences.ABSENCE_DATE as fecha,
-          Employees.STATUS_ID as estadoEmpleado
+          Employees.NAME as name,
+          AbsenceTypes.TYPE as absenceType,
+          Absences.DESCRIPTION as description,
+          Absences.HOURS_ABSENT as hoursAbsent,
+          Absences.ABSENCE_DATE as date,
+          Employees.STATUS_ID as employeeStatus
         FROM Absences
         JOIN Employees ON Absences.EMPLOYEE_ID = Employees.EMPLOYEE_ID
         JOIN AbsenceTypes ON Absences.ABSENCE_TYPE_ID = AbsenceTypes.ABSENCE_TYPE_ID
@@ -39,14 +39,16 @@ function handleCreateAbsence(db) {
 
     try {
       const stmt = db.prepare(
-        'INSERT INTO Absences (ABSENCE_ID, ABSENCE_TYPE_ID, DESCRIPTION, HOURS_ABSENT, ABSENCE_DATE) VALUES (@absence_id, @absence_type_id, @description, @hours_absent, @absence_date)'
+        `INSERT INTO Absences (EMPLOYEE_ID, ABSENCE_TYPE_ID, DESCRIPTION, HOURS_ABSENT, ABSENCE_DATE, STATUS_ID)
+        VALUES (?, ?, ?, ?, ?, ?)`
       );
       const result = stmt.run(
-        absence.absence_id,
-        absence.absence_type_id,
+        absence.employeeId,
+        absence.absenceTypeId,
         absence.description,
-        absence.hours_absent,
-        absence.absence_date
+        absence.hoursAbsent,
+        absence.date,
+        absence.statusId
       );
       return result;
     } catch (error) {
@@ -55,6 +57,7 @@ function handleCreateAbsence(db) {
     }
   });
 }
+
 
 function handleEditAbsence(db) {
   ipcMain.handle('edit-absence', (event, absence) => {
