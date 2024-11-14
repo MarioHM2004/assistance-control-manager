@@ -8,13 +8,13 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Absence } from './pages/Absence';
 import { Employees } from './pages/Employees';
+import { AbsenceTypes } from './pages/AbsenceTypes';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    {/*<App />*/}
     <HashRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
@@ -23,6 +23,7 @@ root.render(
           <Route path="/dashboard" element={<Dashboard />}></Route>
           <Route path="/absence" element={<Absence />}></Route>
           <Route path="/employees" element={<Employees />}></Route>
+          <Route path="/absenceTypes" element={<AbsenceTypes />}></Route>
 
         </Route>
       </Routes>

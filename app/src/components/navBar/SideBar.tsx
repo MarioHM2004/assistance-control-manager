@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MdOutlineTableRows } from 'react-icons/md';
 import { MdOutlineDisabledByDefault } from 'react-icons/md';
+import { HiPencilAlt } from "react-icons/hi";
 import { GrUserWorker } from 'react-icons/gr';
 
 export const SideBar: React.FC = () => {
@@ -14,7 +15,6 @@ export const SideBar: React.FC = () => {
           className="drawer-overlay"
         ></label>
         <ul className="menu bg-base-200 text-base-content min-h-full w-80 p-4 flex flex-col items-center">
-          {/* Sidebar content here */}
           <img
             className="max-w-40 max-h-40 pb-4"
             src={process.env.PUBLIC_URL + '/diselLogo.png'}
@@ -23,12 +23,16 @@ export const SideBar: React.FC = () => {
           <p className="font-bold pb-2">ACM</p>
           <li className="self-start w-full">
             <div className="flex items-center space-x-2">
-              <MdOutlineDisabledByDefault stroke="0.1" size={20} />
-              <Link to="/Absence">Nueva ausencia</Link>
-            </div>
-            <div className="flex items-center space-x-2">
               <MdOutlineTableRows size={20} />
               <Link to="/dashboard">Tablero</Link>
+            </div>
+            <div className="flex items-center space-x-2">
+              <MdOutlineDisabledByDefault stroke="0.1" size={20} />
+              <Link to="/Absence">Nueva falta</Link>
+            </div>
+            <div className="flex items-center space-x-2">
+              <HiPencilAlt size={20} />
+              <Link to="/AbsenceTypes">Tipos de falta</Link>
             </div>
             <div className="flex items-center space-x-2">
               <GrUserWorker size={20} />

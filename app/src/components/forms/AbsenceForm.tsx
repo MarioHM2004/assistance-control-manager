@@ -82,7 +82,7 @@ export const AbsenceForm: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-base-100">
       <div className="container mx-auto pt-8 xl:pr-20 xl:pl-20 sm:pl-2 pb-8 max-w-2xl bg-base-200 shadow-lg rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-4 text-center">
-          Registrar Ausencia
+          Registrar Falta
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="form-control">
