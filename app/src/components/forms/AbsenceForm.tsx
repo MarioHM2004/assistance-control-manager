@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { AbsenceType, Employees } from '../models/types';
+import { useNavigate } from 'react-router-dom';
 
 export const AbsenceForm: React.FC = () => {
+  const navigate = useNavigate();
   const [names, setNames] = useState<Employees[]>([]);
   const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
   const [formData, setFormData] = useState({
@@ -64,6 +66,8 @@ export const AbsenceForm: React.FC = () => {
 
       await window.electron.ipcRenderer.invoke('create-absence', absenceData);
       console.log('Form Data Submitted:', absenceData);
+
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error submitting form:', error);
     }
