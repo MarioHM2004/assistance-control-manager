@@ -9,7 +9,6 @@
     "start": "electron .",
     "start:dev": "npx electronmon --trace-warnings .",
     "postinstall": "electron-rebuild"
-
   },
   "keywords": [
     "electron",
@@ -21,6 +20,7 @@
   "dependencies": {
     "better-sqlite3": "^11.3.0",
     "electron": "^32.1.2",
+    "exceljs": "^4.4.0",
     "react-daisyui": "^5.0.5"
   },
   "devDependencies": {
