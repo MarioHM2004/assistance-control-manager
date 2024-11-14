@@ -4,7 +4,7 @@ const dbPath = path.join(__dirname, 'sqlite.db');
 const url = require('url');
 const Database = require('better-sqlite3');
 const { handleEmployees } = require('./database/ipcEmployees');
-const { handleGetAbsenceTypes } = require('./database/ipcAbsenceTypes');
+const { handleAbsenceTypes } = require('./database/ipcAbsenceTypes');
 const { handleAbsences } = require('./database/ipcAbsences');
 const { handleExportation } = require('./exportation/ipcExcel');
 let db;
@@ -46,7 +46,7 @@ app.whenReady().then(() => {
   createDatabase();
   createWindow();
   handleEmployees(db);
-  handleGetAbsenceTypes(db);
+  handleAbsenceTypes(db);
   handleAbsences(db);
   handleExportation();
 });
