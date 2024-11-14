@@ -1,14 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Modal } from 'react-daisyui';
-
-interface Employee {
-  EMPLOYEE_ID: number;
-  NAME: string;
-  STATUS_ID: number;
-}
+import { Employees } from '../models/types';
 
 export const EmployeesTable: React.FC = () => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<Employees[]>([]);
   const [filters, setFilters] = useState({ name: '' , status: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEmployeeName, setNewEmployeeName] = useState('');

@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-interface AbsenceType {
-  ABSENCE_TYPE_ID: number;
-  TYPE: string;
-}
-
-interface Employees {
-  EMPLOYEE_ID: number;
-  NAME: string;
-}
+import { AbsenceType, Employees } from '../models/types';
 
 export const AbsenceForm: React.FC = () => {
   const [names, setNames] = useState<Employees[]>([]);
