@@ -9,6 +9,7 @@ function handleGetAbsences(db) {
     try {
       const query = `
         SELECT
+          Absences.ABSENCE_ID as absenceId,
           Employees.NAME as name,
           AbsenceTypes.TYPE as absenceType,
           Absences.DESCRIPTION as description,
@@ -58,25 +59,25 @@ function handleCreateAbsence(db) {
   });
 }
 
-
 function handleEditAbsence(db) {
   ipcMain.handle('edit-absence', (event, absence) => {
     if (!db) {
       throw new Error('Database not initialized');
     }
+    console.log('Datos recibidos en el backend:', absence);
 
     try {
       const stmt = db.prepare(
-        'UPDATE Absences SET ABSENCE_TYPE_ID = @absence_type_id, DESCRIPTION = @description, HOURS_ABSENT = @hours_absent, ABSENCE_DATE = @absence_date WHERE ABSENCE_ID = @absence_id'
+        'UPDATE Absences SET ABSENCE_TYPE_ID = @absenceTypeId, DESCRIPTION = @description, HOURS_ABSENT = @hoursAbsent, ABSENCE_DATE = @date WHERE ABSENCE_ID = @absenceId'
       );
-      const result = stmt.run(
-        absence.absence_type_id,
-        absence.description,
-        absence.hours_absent,
-        absence.absence_date,
-        absence.absence_id
-      );
-      return result;
+      const result = stmt.run({
+        absenceId: absence.absenceId,
+        absenceTypeId: absence.absenceTypeId,
+        description: absence.description,
+        hoursAbsent: absence.hoursAbsent,
+        date: absence.date,
+      });
+      return result.changes > 0 ? 1 : 0;
     } catch (error) {
       console.error('Error editing absence:', error.message);
       throw error;
@@ -91,9 +92,9 @@ function handleDeleteAbsence(db) {
     }
 
     try {
-      const stmt = db.prepare('DELETE FROM Absences WHERE ABSENCE_ID = @id');
-      const result = stmt.run(id);
-      return result;
+      const stmt = db.prepare('DELETE FROM Absences WHERE ABSENCE_ID = @absenceId');
+      const result = stmt.run({ absenceId: id });
+      return result.changes > 0 ? 1 : 0;
     } catch (error) {
       console.error('Error deleting absence:', error.message);
       throw error;
