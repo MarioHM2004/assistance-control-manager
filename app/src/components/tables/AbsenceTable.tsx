@@ -1,20 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Modal } from 'react-daisyui';
-
-interface Absence {
-  absenceId: number;
-  name: string;
-  absenceType: string;
-  description: string;
-  hoursAbsent: number;
-  date: string;
-}
-
-interface AbsenceType {
-  ABSENCE_TYPE_ID: number;
-  TYPE: string;
-}
+import { Absence, AbsenceType } from '../models/types';
 
 const AssistTable: React.FC = () => {
   const [data, setData] = useState<Absence[]>([]);
@@ -132,6 +119,19 @@ const AssistTable: React.FC = () => {
     }
   };
 
+  const exportToExcel = async () => {
+    try {
+      const filteredExportData = filteredData.map(({ absenceId, employeeStatus, ...rest }) => rest);
+
+      const savePath = await window.electron.ipcRenderer.invoke('export-excel', filteredExportData);
+      alert(`Archivo Excel guardado en ${savePath}`);
+    } catch (error) {
+      console.error('Error al exportar a Excel:', error);
+      alert('Hubo un error al exportar a Excel');
+    }
+  };
+
+
   return (
     <div className="container mx-auto pt-8 xl:pr-16 xl:pl-16 sm:pl-2 pb-8">
       <div className="pb-4 flex items-center justify-between">
@@ -147,12 +147,12 @@ const AssistTable: React.FC = () => {
           >
             Nueva falta
           </Link>
-          <Link
-            to="/Absence"
+          <button
+            onClick={exportToExcel}
             className="btn btn-xs sm:btn-sm md:btn-md lg:btn-md btn-secondary"
           >
             Exportar
-          </Link>
+          </button>
         </div>
       </div>
       <div className="max-h-96 overflow-y-auto overflow-x-auto bg-base-200 shadow-lg rounded-lg">

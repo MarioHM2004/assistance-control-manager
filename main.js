@@ -1,11 +1,12 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const dbPath = path.join(__dirname, 'sqlite.db');
 const url = require('url');
 const Database = require('better-sqlite3');
-const dbPath = path.join(__dirname, 'sqlite.db');
 const { handleEmployees } = require('./database/ipcEmployees');
 const { handleGetAbsenceTypes } = require('./database/ipcAbsenceTypes');
-const { handleAbsences} = require('./database/ipcAbsences');
+const { handleAbsences } = require('./database/ipcAbsences');
+const { handleExportation } = require('./exportation/ipcExcel');
 let db;
 
 function createDatabase() {
@@ -38,7 +39,7 @@ function createWindow() {
     protocol: 'file:',
   });
 
-  mainWindow.loadURL('http://localhost:3000');
+  mainWindow.loadURL(startUrl);
 }
 
 app.whenReady().then(() => {
@@ -47,4 +48,5 @@ app.whenReady().then(() => {
   handleEmployees(db);
   handleGetAbsenceTypes(db);
   handleAbsences(db);
+  handleExportation();
 });
