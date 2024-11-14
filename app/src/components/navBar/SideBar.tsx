@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MdOutlineTableRows } from 'react-icons/md';
 import { MdOutlineDisabledByDefault } from 'react-icons/md';
-import { GrUserWorker } from "react-icons/gr";
+import { GrUserWorker } from 'react-icons/gr';
 
 export const SideBar: React.FC = () => {
   return (
@@ -24,14 +24,14 @@ export const SideBar: React.FC = () => {
           <li className="self-start w-full">
             <div className="flex items-center space-x-2">
               <MdOutlineDisabledByDefault stroke="0.1" size={20} />
-              <Link to="/Absence">Nueva falta</Link>
+              <Link to="/Absence">Nueva ausencia</Link>
             </div>
             <div className="flex items-center space-x-2">
               <MdOutlineTableRows size={20} />
               <Link to="/dashboard">Tablero</Link>
             </div>
             <div className="flex items-center space-x-2">
-              <GrUserWorker size={20}/>
+              <GrUserWorker size={20} />
               <Link to="/employees">Empleados</Link>
             </div>
             <div>

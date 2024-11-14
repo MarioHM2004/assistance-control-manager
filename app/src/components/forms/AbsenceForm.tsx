@@ -54,17 +54,20 @@ export const AbsenceForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const selectedAbsenceType = absenceTypes.find(type => type.TYPE === formData.absenceType);
+    const selectedAbsenceType = absenceTypes.find(
+      (type) => type.TYPE === formData.absenceType
+    );
 
     if (!selectedAbsenceType) {
-      console.error("Tipo de falta no seleccionado correctamente");
+      console.error('Tipo de falta no seleccionado correctamente');
       return;
     }
 
     try {
       const absenceData = {
         ...formData,
-        employeeId: names.find(name => name.NAME === formData.name)?.EMPLOYEE_ID,
+        employeeId: names.find((name) => name.NAME === formData.name)
+          ?.EMPLOYEE_ID,
         absenceTypeId: selectedAbsenceType.ABSENCE_TYPE_ID,
       };
 
@@ -75,19 +78,18 @@ export const AbsenceForm: React.FC = () => {
     }
   };
 
-
   const filteredNames = names.filter(
     (name) =>
-      name.NAME &&
-      name.NAME.toLowerCase().includes(formData.name.toLowerCase())
+      name.NAME && name.NAME.toLowerCase().includes(formData.name.toLowerCase())
   );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-100">
       <div className="container mx-auto pt-8 xl:pr-20 xl:pl-20 sm:pl-2 pb-8 max-w-2xl bg-base-200 shadow-lg rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-4 text-center">Registrar Falta</h2>
+        <h2 className="text-2xl font-bold mb-4 text-center">
+          Registrar Ausencia
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Empleado */}
           <div className="form-control">
             <label className="label">
               <span className="label-text">Empleado</span>
@@ -114,7 +116,6 @@ export const AbsenceForm: React.FC = () => {
                       setFormData((prevData) => ({
                         ...prevData,
                         name: filteredName.NAME,
-
                       }))
                     }
                   >
@@ -125,7 +126,6 @@ export const AbsenceForm: React.FC = () => {
             )}
           </div>
 
-          {/* Tipo de Falta */}
           <div className="form-control">
             <label className="label">
               <span className="label-text">Tipo de Falta</span>
@@ -148,7 +148,6 @@ export const AbsenceForm: React.FC = () => {
             </select>
           </div>
 
-          {/* Descripción de la falta */}
           <div className="form-control">
             <label className="label">
               <span className="label-text">Descripción de la falta</span>
@@ -163,7 +162,6 @@ export const AbsenceForm: React.FC = () => {
             ></textarea>
           </div>
 
-          {/* Horas faltadas */}
           <div className="form-control">
             <label className="label">
               <span className="label-text">Horas faltadas</span>
@@ -186,7 +184,6 @@ export const AbsenceForm: React.FC = () => {
             </select>
           </div>
 
-          {/* Fecha */}
           <div className="form-control">
             <label className="label">
               <span className="label-text">Fecha</span>
@@ -201,7 +198,6 @@ export const AbsenceForm: React.FC = () => {
             />
           </div>
 
-          {/* Botón de añadir */}
           <button type="submit" className="btn btn-primary w-full">
             Añadir Falta
           </button>
