@@ -1,29 +1,62 @@
 {
   "name": "acm2",
+  "productName": "acm",
   "version": "1.0.0",
   "description": "Assistance control manager",
   "main": "main.js",
   "scripts": {
     "rebuild": "electron-rebuild",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
     "start:dev": "npx electronmon --trace-warnings .",
-    "postinstall": "electron-rebuild"
+    "postinstall": "electron-builder install-app-deps",
+    "react-build": "npm --prefix app run build",
+    "package": "electron-builder"
   },
   "keywords": [
     "electron",
     "reactjs",
     "typescript"
   ],
-  "author": "Mario Herranz",
+  "author": "Mario A. Herranz",
   "license": "MIT",
   "dependencies": {
     "better-sqlite3": "^11.3.0",
-    "electron": "^32.1.2",
-    "exceljs": "^4.4.0",
-    "react-daisyui": "^5.0.5"
+    "exceljs": "^4.4.0"
   },
   "devDependencies": {
-    "@electron/rebuild": "^3.7.0"
+    "@electron/rebuild": "^3.7.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.diselstudio.acm",
+    "productName": "acm",
+    "asar": true,
+    "files": [
+      "main.js",
+      "preload.js",
+      "react_build/**/*",
+      "!react_app/**/*",
+      "database/**/*",
+      "exportation/**/*",
+      "sqlite.db",
+      "node_modules/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "sqlite.db",
+        "to": "resources/sqlite.db"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "react_build/iconAcm.png"
+    },
+    "extraMetadata": {
+      "main": "main.js"
+    }
   }
 }
