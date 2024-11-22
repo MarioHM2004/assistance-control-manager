@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Modal } from 'react-daisyui';
 import { AbsenceType } from '../models/types';
 
 export const AbsenceTypesTable: React.FC = () => {
   const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
   const [filter, setFilter] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [newAbsenceType, setNewAbsenceType] = useState('');
-  const [error, setError] = useState<String | null>(null); // State for the error message
+  const [error, setError] = useState<String | null>(null);
 
   useEffect(() => {
     const fetchAbsenceTypes = async () => {
@@ -31,7 +29,9 @@ export const AbsenceTypesTable: React.FC = () => {
 
   const handleAddAbsenceType = async () => {
     try {
-      const result = await window.electron.ipcRenderer.invoke('add-absence-type', { type: newAbsenceType });
+      const result = await window.electron.ipcRenderer.invoke('add-absence-type', {
+        type: newAbsenceType,
+      });
       if (result > 0) {
         setAbsenceTypes([...absenceTypes, { ABSENCE_TYPE_ID: result, TYPE: newAbsenceType }]);
         resetModalState();
@@ -44,13 +44,17 @@ export const AbsenceTypesTable: React.FC = () => {
   const handleDeleteAbsenceType = async (id: number) => {
     try {
       setError('');
-      const result = await window.electron.ipcRenderer.invoke('delete-absence-type', { absenceTypeId: id });
+      const result = await window.electron.ipcRenderer.invoke('delete-absence-type', {
+        absenceTypeId: id,
+      });
       if (result > 0) {
         setAbsenceTypes(absenceTypes.filter((type) => type.ABSENCE_TYPE_ID !== id));
       }
     } catch (error) {
       if (error instanceof Error && error.message.includes('related absences')) {
-        setError('Error: No se puede eliminar este tipo de falta porque tiene faltas relacionadas.');
+        setError(
+          'Error: No se puede eliminar este tipo de falta porque tiene faltas relacionadas.'
+        );
         setTimeout(() => setError(null), 3000);
       } else {
         console.error('Error deleting absence type:', error);
@@ -60,19 +64,17 @@ export const AbsenceTypesTable: React.FC = () => {
 
   const resetModalState = () => {
     setNewAbsenceType('');
-    setIsModalOpen(false);
+    const checkbox = document.getElementById('add-absence-type-modal') as HTMLInputElement;
+    if (checkbox) checkbox.checked = false;
   };
 
   return (
     <div className="container mx-auto pt-8 xl:pr-16 xl:pl-16 sm:pl-2 pb-8">
       <div className="pb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Lista de Tipos de Ausencia</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary sm:btn-sm md:btn-md lg:btn-md"
-        >
+        <label htmlFor="add-absence-type-modal" className="btn btn-primary sm:btn-sm md:btn-md lg:btn-md">
           Añadir Tipo de Ausencia
-        </button>
+        </label>
       </div>
       <div className="max-h-96 overflow-y-auto overflow-x-auto bg-base-200 shadow-lg rounded-lg">
         <table className="table w-full">
@@ -98,7 +100,6 @@ export const AbsenceTypesTable: React.FC = () => {
               </th>
             </tr>
           </thead>
-
           <tbody>
             {filteredAbsenceTypes.length > 0 ? (
               filteredAbsenceTypes.map((type) => (
@@ -131,38 +132,31 @@ export const AbsenceTypesTable: React.FC = () => {
         </div>
       )}
 
-      <Modal
-        open={isModalOpen}
-        onClickBackdrop={resetModalState}
-        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-      >
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-          <Modal.Header className="font-bold text-lg pb-4">
-            Añadir Tipo de Ausencia
-          </Modal.Header>
-          <Modal.Body>
-            <input
-              type="text"
-              placeholder="Nombre del tipo de ausencia"
-              className="input input-bordered w-full"
-              value={newAbsenceType}
-              onChange={(e) => setNewAbsenceType(e.target.value)}
-            />
-          </Modal.Body>
-          <Modal.Actions className="flex justify-end pt-4">
+      <input type="checkbox" id="add-absence-type-modal" className="modal-toggle" />
+      <div className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg pb-4">Añadir Tipo de Ausencia</h3>
+          <input
+            type="text"
+            placeholder="Nombre del tipo de ausencia"
+            className="input input-bordered w-full"
+            value={newAbsenceType}
+            onChange={(e) => setNewAbsenceType(e.target.value)}
+          />
+          <div className="modal-action">
             <button
-              className="btn btn-primary mr-2"
+              className="btn btn-primary"
               onClick={handleAddAbsenceType}
               disabled={!newAbsenceType.trim()}
             >
               Añadir
             </button>
-            <button className="btn btn-secondary" onClick={resetModalState}>
+            <label htmlFor="add-absence-type-modal" className="btn">
               Cancelar
-            </button>
-          </Modal.Actions>
+            </label>
+          </div>
         </div>
-      </Modal>
+      </div>
     </div>
   );
 };

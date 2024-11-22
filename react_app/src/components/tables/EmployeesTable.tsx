@@ -1,27 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Modal } from 'react-daisyui';
 import { Employees } from '../models/types';
 
 export const EmployeesTable: React.FC = () => {
   const [employees, setEmployees] = useState<Employees[]>([]);
-  const [filters, setFilters] = useState({ name: '' , status: '' });
+  const [filters, setFilters] = useState({ name: '', status: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [newEmployeeStatus, setNewEmployeeStatus] = useState<number>(1);
-  const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(
-    null
-  );
+  const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(null);
+
   const statusOptions = [
     { id: 1, label: 'Activo' },
-    { id: 2, label: 'Inactivo' }
+    { id: 2, label: 'Inactivo' },
   ];
 
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const result = await window.electron.ipcRenderer.invoke(
-          'get-employees'
-        );
+        const result = await window.electron.ipcRenderer.invoke('get-employees');
         setEmployees(result);
       } catch (error) {
         console.error('Error fetching employees:', error);
@@ -58,14 +54,9 @@ export const EmployeesTable: React.FC = () => {
 
   const handleDeleteEmployee = async (id: number) => {
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'delete-employees',
-        id
-      );
+      const result = await window.electron.ipcRenderer.invoke('delete-employees', id);
       if (result > 0) {
-        setEmployees(
-          employees.filter((employee) => employee.EMPLOYEE_ID !== id)
-        );
+        setEmployees(employees.filter((employee) => employee.EMPLOYEE_ID !== id));
       }
     } catch (error) {
       console.error('Error deleting employee:', error);
@@ -81,14 +72,11 @@ export const EmployeesTable: React.FC = () => {
 
   const handleUpdateEmployee = async () => {
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'edit-employees',
-        {
-          id: editingEmployeeId,
-          name: newEmployeeName,
-          status_id: newEmployeeStatus
-        }
-      );
+      const result = await window.electron.ipcRenderer.invoke('edit-employees', {
+        id: editingEmployeeId,
+        name: newEmployeeName,
+        status_id: newEmployeeStatus,
+      });
       if (result > 0) {
         setEmployees(
           employees.map((employee) =>
@@ -144,9 +132,9 @@ export const EmployeesTable: React.FC = () => {
                 </div>
               </th>
               <th className="w-1/5">
-              <div className="flex items-center justify-between">
-                <span className="font-extrabold text-base">Estado</span>
-                <input
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-base">Estado</span>
+                  <input
                     type="text"
                     placeholder="Filtrar por estado"
                     className="input input-bordered input-sm ml-2"
@@ -154,7 +142,7 @@ export const EmployeesTable: React.FC = () => {
                     value={filters.status}
                     onChange={handleFilterChange}
                   />
-                  </div>
+                </div>
               </th>
               <th className="w-1/5">
                 <span className="font-extrabold text-base">Acciones</span>
@@ -169,7 +157,8 @@ export const EmployeesTable: React.FC = () => {
                   <td className="text-base">{employee.EMPLOYEE_ID}</td>
                   <td className="text-base">{employee.NAME}</td>
                   <td className="text-base">
-                    {statusOptions.find(status => status.id === employee.STATUS_ID)?.label || 'Desconocido'}
+                    {statusOptions.find((status) => status.id === employee.STATUS_ID)?.label ||
+                      'Desconocido'}
                   </td>
                   <td>
                     <button
@@ -200,49 +189,44 @@ export const EmployeesTable: React.FC = () => {
         </table>
       </div>
 
-      <Modal
-        open={isModalOpen}
-        onClickBackdrop={resetModalState}
-        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-      >
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-          <Modal.Header className="font-bold text-lg pb-4">
+      <input type="checkbox" id="add-edit-modal" className="modal-toggle" checked={isModalOpen} readOnly />
+      <div className="modal">
+        <div className="modal-box">
+          <h2 className="font-bold text-lg pb-4">
             {editingEmployeeId ? 'Editar Empleado' : 'Añadir Empleado'}
-          </Modal.Header>
-          <Modal.Body>
-            <input
-              type="text"
-              placeholder="Nombre del empleado"
-              className="input input-bordered w-full"
-              value={newEmployeeName}
-              onChange={(e) => setNewEmployeeName(e.target.value)}
-            />
-            <select
-              className="select select-bordered w-full mt-4"
-              value={newEmployeeStatus}
-              onChange={(e) => setNewEmployeeStatus(Number(e.target.value))}
-            >
-              {statusOptions.map((status) => (
-                <option key={status.id} value={status.id}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
-          </Modal.Body>
-          <Modal.Actions className="flex justify-end pt-4">
+          </h2>
+          <input
+            type="text"
+            placeholder="Nombre del empleado"
+            className="input input-bordered w-full mb-4"
+            value={newEmployeeName}
+            onChange={(e) => setNewEmployeeName(e.target.value)}
+          />
+          <select
+            className="select select-bordered w-full"
+            value={newEmployeeStatus}
+            onChange={(e) => setNewEmployeeStatus(Number(e.target.value))}
+          >
+            {statusOptions.map((status) => (
+              <option key={status.id} value={status.id}>
+                {status.label}
+              </option>
+            ))}
+          </select>
+          <div className="modal-action">
             <button
-              className="btn btn-primary mr-2"
+              className="btn btn-primary"
               onClick={editingEmployeeId ? handleUpdateEmployee : handleAddEmployee}
               disabled={!newEmployeeName.trim()}
             >
               {editingEmployeeId ? 'Actualizar' : 'Añadir'}
             </button>
-            <button className="btn btn-secondary" onClick={resetModalState}>
+            <button className="btn" onClick={resetModalState}>
               Cancelar
             </button>
-          </Modal.Actions>
+          </div>
         </div>
-      </Modal>
+      </div>
     </div>
   );
 };
