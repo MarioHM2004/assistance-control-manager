@@ -9,7 +9,7 @@
     "start": "electron .",
     "start:dev": "npx electronmon --trace-warnings .",
     "postinstall": "electron-builder install-app-deps",
-    "react-build": "npm --prefix app run build",
+    "react-build": "npm --prefix react_app run build",
     "package": "electron-builder"
   },
   "keywords": [
