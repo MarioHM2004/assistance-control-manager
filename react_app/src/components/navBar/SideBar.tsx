@@ -38,9 +38,6 @@ export const SideBar: React.FC = () => {
               <GrUserWorker size={20} />
               <Link to="/employees">Empleados</Link>
             </div>
-            <div>
-              <Link to="/login">Login</Link>
-            </div>
           </li>
         </ul>
       </div>
