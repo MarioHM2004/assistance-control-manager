@@ -1,9 +1,11 @@
-import { EmployeesTable } from "../components/tables/EmployeesTable"
+import { EmployeesTable } from '../components/tables/EmployeesTable';
 
-export const Employees: React.FC = () => {
+const Employees: React.FC = () => {
   return (
     <div>
       <EmployeesTable />
     </div>
-  )
-}
+  );
+};
+
+export default Employees;

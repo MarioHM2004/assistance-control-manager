@@ -1,5 +1,40 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Employees } from '../models/types';
+
+const EmployeeRow = React.memo(
+  ({
+    employee,
+    onEdit,
+    onDelete,
+    statusLabel,
+  }: {
+    employee: Employees;
+    onEdit: (id: number, name: string, statusId: number) => void;
+    onDelete: (id: number) => void;
+    statusLabel: string;
+  }) => (
+    <tr className="hover:bg-base-100">
+      <td className="text-base">{employee.NAME}</td>
+      <td className="text-base">{statusLabel}</td>
+      <td>
+        <button
+          className="btn btn-error btn-sm mr-2 mb-2 text-base"
+          onClick={() =>
+            onEdit(employee.EMPLOYEE_ID, employee.NAME, employee.STATUS_ID)
+          }
+        >
+          Editar
+        </button>
+        <button
+          className="btn btn-error btn-sm text-base"
+          onClick={() => onDelete(employee.EMPLOYEE_ID)}
+        >
+          Eliminar
+        </button>
+      </td>
+    </tr>
+  )
+);
 
 export const EmployeesTable: React.FC = () => {
   const [employees, setEmployees] = useState<Employees[]>([]);
@@ -7,17 +42,24 @@ export const EmployeesTable: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [newEmployeeStatus, setNewEmployeeStatus] = useState<number>(1);
-  const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(null);
+  const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(
+    null
+  );
 
-  const statusOptions = [
-    { id: 1, label: 'Activo' },
-    { id: 2, label: 'Inactivo' },
-  ];
+  const statusOptions = useMemo(
+    () => [
+      { id: 1, label: 'Activo' },
+      { id: 2, label: 'Inactivo' },
+    ],
+    []
+  );
 
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const result = await window.electron.ipcRenderer.invoke('get-employees');
+        const result = await window.electron.ipcRenderer.invoke(
+          'get-employees'
+        );
         setEmployees(result);
       } catch (error) {
         console.error('Error fetching employees:', error);
@@ -26,78 +68,101 @@ export const EmployeesTable: React.FC = () => {
     fetchEmployees();
   }, []);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
-  };
-
-  const filteredEmployees = employees.filter((employee) =>
-    employee.NAME.toLowerCase().includes(filters.name.toLowerCase())
+  const handleFilterChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    },
+    []
   );
 
-  const handleAddEmployee = async () => {
-    try {
-      const result = await window.electron.ipcRenderer.invoke('add-employees', {
-        name: newEmployeeName,
-        status_id: newEmployeeStatus,
-      });
-      if (result > 0) {
-        setEmployees([
-          ...employees,
-          { EMPLOYEE_ID: result, NAME: newEmployeeName, STATUS_ID: newEmployeeStatus },
-        ]);
-        resetModalState();
-      }
-    } catch (error) {
-      console.error('Error adding employee:', error);
-    }
-  };
-
-  const handleDeleteEmployee = async (id: number) => {
-    try {
-      const result = await window.electron.ipcRenderer.invoke('delete-employees', id);
-      if (result > 0) {
-        setEmployees(employees.filter((employee) => employee.EMPLOYEE_ID !== id));
-      }
-    } catch (error) {
-      console.error('Error deleting employee:', error);
-    }
-  };
-
-  const handleEditEmployee = (id: number, name: string, statusId: number) => {
-    setEditingEmployeeId(id);
-    setNewEmployeeName(name);
-    setNewEmployeeStatus(statusId);
-    setIsModalOpen(true);
-  };
-
-  const handleUpdateEmployee = async () => {
-    try {
-      const result = await window.electron.ipcRenderer.invoke('edit-employees', {
-        id: editingEmployeeId,
-        name: newEmployeeName,
-        status_id: newEmployeeStatus,
-      });
-      if (result > 0) {
-        setEmployees(
-          employees.map((employee) =>
-            employee.EMPLOYEE_ID === editingEmployeeId
-              ? { ...employee, NAME: newEmployeeName, STATUS_ID: newEmployeeStatus }
-              : employee
-          )
-        );
-        resetModalState();
-      }
-    } catch (error) {
-      console.error('Error updating employee:', error);
-    }
-  };
-
-  const resetModalState = () => {
+  const resetModalState = useCallback(() => {
     setNewEmployeeName('');
     setNewEmployeeStatus(1);
     setIsModalOpen(false);
     setEditingEmployeeId(null);
-  };
+  }, []);
+
+  const handleAddEmployee = useCallback(async () => {
+    try {
+      const result = await window.electron.ipcRenderer.invoke('add-employees', {
+        name: newEmployeeName.trim(),
+        status_id: newEmployeeStatus,
+      });
+      if (result > 0) {
+        setEmployees((prev) => [
+          ...prev.filter((e) => e.EMPLOYEE_ID !== result),
+          {
+            EMPLOYEE_ID: result,
+            NAME: newEmployeeName.trim(),
+            STATUS_ID: newEmployeeStatus,
+          },
+        ]);
+        resetModalState();
+      }
+    } catch (error) {
+      console.error('Error adding employee:', (error as Error).message);
+      alert((error as Error).message);
+    }
+  }, [newEmployeeName, newEmployeeStatus, resetModalState]);
+
+  const handleDeleteEmployee = useCallback(async (id: number) => {
+    try {
+      await window.electron.ipcRenderer.invoke('delete-employees', id);
+      setEmployees((prev) =>
+        prev.filter((employee) => employee.EMPLOYEE_ID !== id)
+      );
+    } catch (error) {
+      console.error('Error deleting employee:', (error as Error).message);
+      alert((error as Error).message);
+    }
+  }, []);
+
+  const handleEditEmployee = useCallback(
+    (id: number, name: string, statusId: number) => {
+      setEditingEmployeeId(id);
+      setNewEmployeeName(name);
+      setNewEmployeeStatus(statusId);
+      setIsModalOpen(true);
+    },
+    []
+  );
+
+  const handleUpdateEmployee = useCallback(async () => {
+    try {
+      await window.electron.ipcRenderer.invoke('edit-employees', {
+        id: editingEmployeeId,
+        name: newEmployeeName.trim(),
+        status_id: newEmployeeStatus,
+      });
+
+      setEmployees((prev) =>
+        prev.map((employee) =>
+          employee.EMPLOYEE_ID === editingEmployeeId
+            ? {
+                ...employee,
+                NAME: newEmployeeName.trim(),
+                STATUS_ID: newEmployeeStatus,
+              }
+            : employee
+        )
+      );
+      resetModalState();
+    } catch (error) {
+      console.error('Error updating employee:', (error as Error).message);
+      alert((error as Error).message);
+    }
+  }, [editingEmployeeId, newEmployeeName, newEmployeeStatus, resetModalState]);
+
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((employee) => {
+      const matchesName = employee.NAME.toLowerCase().includes(
+        filters.name.toLowerCase()
+      );
+      const matchesStatus =
+        !filters.status || employee.STATUS_ID.toString() === filters.status;
+      return matchesName && matchesStatus;
+    });
+  }, [employees, filters]);
 
   return (
     <div className="container mx-auto pt-8 xl:pr-16 xl:pl-16 sm:pl-2 pb-8">
@@ -115,9 +180,6 @@ export const EmployeesTable: React.FC = () => {
         <table className="table w-full">
           <thead className="sticky top-0 bg-base-300">
             <tr>
-              <th className="w-1/5">
-                <span className="font-extrabold text-base">ID</span>
-              </th>
               <th className="w-2/5">
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-base">Nombre</span>
@@ -134,14 +196,6 @@ export const EmployeesTable: React.FC = () => {
               <th className="w-1/5">
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-base">Estado</span>
-                  <input
-                    type="text"
-                    placeholder="Filtrar por estado"
-                    className="input input-bordered input-sm ml-2"
-                    name="status"
-                    value={filters.status}
-                    onChange={handleFilterChange}
-                  />
                 </div>
               </th>
               <th className="w-1/5">
@@ -149,38 +203,24 @@ export const EmployeesTable: React.FC = () => {
               </th>
             </tr>
           </thead>
-
           <tbody>
             {filteredEmployees.length > 0 ? (
               filteredEmployees.map((employee) => (
-                <tr key={employee.EMPLOYEE_ID} className="hover:bg-base-100">
-                  <td className="text-base">{employee.EMPLOYEE_ID}</td>
-                  <td className="text-base">{employee.NAME}</td>
-                  <td className="text-base">
-                    {statusOptions.find((status) => status.id === employee.STATUS_ID)?.label ||
-                      'Desconocido'}
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-error btn-sm mr-2 text-base"
-                      onClick={() =>
-                        handleEditEmployee(employee.EMPLOYEE_ID, employee.NAME, employee.STATUS_ID)
-                      }
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className="btn btn-error btn-sm text-base"
-                      onClick={() => handleDeleteEmployee(employee.EMPLOYEE_ID)}
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
+                <EmployeeRow
+                  key={`employee-${employee.EMPLOYEE_ID}`}
+                  employee={employee}
+                  onEdit={handleEditEmployee}
+                  onDelete={handleDeleteEmployee}
+                  statusLabel={
+                    statusOptions.find(
+                      (status) => status.id === employee.STATUS_ID
+                    )?.label || 'Desconocido'
+                  }
+                />
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="text-center">
+                <td colSpan={3} className="text-center">
                   No se encontraron resultados
                 </td>
               </tr>
@@ -189,7 +229,13 @@ export const EmployeesTable: React.FC = () => {
         </table>
       </div>
 
-      <input type="checkbox" id="add-edit-modal" className="modal-toggle" checked={isModalOpen} readOnly />
+      <input
+        type="checkbox"
+        id="add-edit-modal"
+        className="modal-toggle"
+        checked={isModalOpen}
+        readOnly
+      />
       <div className="modal">
         <div className="modal-box">
           <h2 className="font-bold text-lg pb-4">
@@ -216,7 +262,9 @@ export const EmployeesTable: React.FC = () => {
           <div className="modal-action">
             <button
               className="btn btn-primary"
-              onClick={editingEmployeeId ? handleUpdateEmployee : handleAddEmployee}
+              onClick={
+                editingEmployeeId ? handleUpdateEmployee : handleAddEmployee
+              }
               disabled={!newEmployeeName.trim()}
             >
               {editingEmployeeId ? 'Actualizar' : 'Añadir'}

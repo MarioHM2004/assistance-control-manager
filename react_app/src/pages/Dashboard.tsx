@@ -1,9 +1,11 @@
-import AbsenceTable from '../components/tables/AbsenceTable'
+import AbsenceTable from '../components/tables/AbsenceTable';
 
-export const Dashboard: React.FC = () => {
+const Dashboard: React.FC = () => {
   return (
     <div>
       <AbsenceTable />
     </div>
-  )
-}
+  );
+};
+
+export default Dashboard;

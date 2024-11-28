@@ -1,6 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Absence, AbsenceType } from '../models/types';
+
+const AbsenceRow = React.memo(
+  ({
+    item,
+    onEdit,
+    onDelete,
+  }: {
+    item: Absence;
+    onEdit: (absence: Absence) => void;
+    onDelete: (id: number) => void;
+  }) => (
+    <tr className="hover:bg-base-100">
+      <td>{item.name}</td>
+      <td>{item.absenceType}</td>
+      <td>{item.description}</td>
+      <td>{item.hoursAbsent}</td>
+      <td>{item.date}</td>
+      <td>
+        <button
+          className="btn btn-error btn-sm mb-2"
+          onClick={() => onEdit(item)}
+        >
+          Editar
+        </button>
+        <button
+          className="btn btn-error btn-sm"
+          onClick={() => onDelete(item.absenceId)}
+        >
+          Eliminar
+        </button>
+      </td>
+    </tr>
+  )
+);
 
 const AbsenceTable: React.FC = () => {
   const [data, setData] = useState<Absence[]>([]);
@@ -14,19 +48,26 @@ const AbsenceTable: React.FC = () => {
   });
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null);
 
-  const keyMapping: Record<string, keyof Absence> = {
-    name: 'name',
-    absenceType: 'absenceType',
-    description: 'description',
-    hoursAbsent: 'hoursAbsent',
-    date: 'date',
-  };
+  const keyMapping = useMemo(
+    () => ({
+      name: 'name',
+      absenceType: 'absenceType',
+      description: 'description',
+      hoursAbsent: 'hoursAbsent',
+      date: 'date',
+    }),
+    []
+  );
 
   useEffect(() => {
     const fetchAbsences = async () => {
       try {
-        const result: Absence[] = await window.electron.ipcRenderer.invoke('get-absences');
-        const typesResponse = await window.electron.ipcRenderer.invoke('get-absence-types');
+        const result: Absence[] = await window.electron.ipcRenderer.invoke(
+          'get-absences'
+        );
+        const typesResponse = await window.electron.ipcRenderer.invoke(
+          'get-absence-types'
+        );
         setData(result);
         setAbsenceTypes(typesResponse);
       } catch (error) {
@@ -37,44 +78,59 @@ const AbsenceTable: React.FC = () => {
     fetchAbsences();
   }, []);
 
-  const handleFilterChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFilters({
-      ...filters,
-      [e.target.name]: e.target.value,
+  const filteredData = useMemo(() => {
+    return data.filter((item) => {
+      return (
+        Object.keys(filters).every((key) => {
+          if (key === 'hoursAbsent') return true;
+          const keyTyped = key as keyof typeof keyMapping;
+          const value = item[keyMapping[keyTyped] as keyof Absence];
+          const filterValue = filters[key as keyof typeof filters];
+
+          if (!filterValue) return true;
+          return value
+            ?.toString()
+            .toLowerCase()
+            .includes(filterValue.toLowerCase());
+        }) &&
+        (!filters.hoursAbsent ||
+          item.hoursAbsent === parseFloat(filters.hoursAbsent))
+      );
     });
-  };
+  }, [data, filters, keyMapping]);
 
-  const filteredData = data.filter((item) => {
-    return (
-      Object.keys(filters).every((key) => {
-        if (key === 'hoursAbsent') return true; // Handled separately
-        const value = item[keyMapping[key]];
-        const filterValue = filters[key as keyof typeof filters];
+  const handleFilterChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setFilters((prevFilters) => ({
+        ...prevFilters,
+        [e.target.name]: e.target.value,
+      }));
+    },
+    []
+  );
 
-        if (!filterValue) return true; // Skip empty filters
-        return value?.toString().toLowerCase().includes(filterValue.toLowerCase());
-      }) &&
-      (!filters.hoursAbsent || item.hoursAbsent === parseFloat(filters.hoursAbsent))
-    );
-  });
-
-  const handleEditAbsence = (absence: Absence) => {
+  const handleEditAbsence = useCallback((absence: Absence) => {
     setEditingAbsence(absence);
-    document.getElementById('edit-absence-modal')?.setAttribute('checked', 'true');
-  };
+    document
+      .getElementById('edit-absence-modal')
+      ?.setAttribute('checked', 'true');
+  }, []);
 
-  const handleDeleteAbsence = async (absenceId: number) => {
+  const handleDeleteAbsence = useCallback(async (absenceId: number) => {
     try {
-      const result = await window.electron.ipcRenderer.invoke('delete-absence', absenceId);
+      const result = await window.electron.ipcRenderer.invoke(
+        'delete-absence',
+        absenceId
+      );
       if (result > 0) {
-        setData(data.filter((absence) => absence.absenceId !== absenceId));
+        setData((prevData) =>
+          prevData.filter((absence) => absence.absenceId !== absenceId)
+        );
       }
     } catch (error) {
       console.error('Error deleting absence:', error);
     }
-  };
+  }, []);
 
   const handleUpdateAbsence = async () => {
     if (editingAbsence) {
@@ -93,14 +149,21 @@ const AbsenceTable: React.FC = () => {
       };
 
       try {
-        const result = await window.electron.ipcRenderer.invoke('edit-absence', absenceData);
+        const result = await window.electron.ipcRenderer.invoke(
+          'edit-absence',
+          absenceData
+        );
         if (result > 0) {
-          setData(
-            data.map((absence) =>
-              absence.absenceId === editingAbsence.absenceId ? editingAbsence : absence
+          setData((prevData) =>
+            prevData.map((absence) =>
+              absence.absenceId === editingAbsence.absenceId
+                ? editingAbsence
+                : absence
             )
           );
-          document.getElementById('edit-absence-modal')?.removeAttribute('checked');
+          document
+            .getElementById('edit-absence-modal')
+            ?.removeAttribute('checked');
           setEditingAbsence(null);
         }
       } catch (error) {
@@ -109,28 +172,27 @@ const AbsenceTable: React.FC = () => {
     }
   };
 
-  const exportToExcel = async () => {
-    try {
-      const filteredExportData = filteredData.map(({ absenceId, employeeStatus, ...rest }) => rest);
-
-      const savePath = await window.electron.ipcRenderer.invoke('export-excel', filteredExportData);
-      alert(`Archivo Excel guardado en ${savePath}`);
-    } catch (error) {
-      console.error('Error al exportar a Excel:', error);
-      alert('Hubo un error al exportar a Excel');
-    }
-  };
-
   return (
     <div className="container mx-auto pt-8 xl:pr-16 xl:pl-16 sm:pl-2 pb-8">
       <div className="pb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Tablero</h1>
         <div>
-          <Link to="/Absence" className="btn sm:btn-sm md:btn-md lg:btn-md btn-primary mr-2">
+          <Link
+            to="/Absence"
+            className="btn sm:btn-sm md:btn-md lg:btn-md btn-primary mr-2"
+          >
             Nueva falta
           </Link>
           <button
-            onClick={exportToExcel}
+            onClick={() => {
+              const filteredExportData = filteredData.map(
+                ({ absenceId, employeeStatus, ...rest }) => rest
+              );
+              window.electron.ipcRenderer.invoke(
+                'export-excel',
+                filteredExportData
+              );
+            }}
             className="btn btn-xs sm:btn-sm md:btn-md lg:btn-md btn-secondary"
           >
             Exportar
@@ -141,7 +203,13 @@ const AbsenceTable: React.FC = () => {
         <table className="table w-full">
           <thead className="sticky top-0 bg-base-300">
             <tr>
-              {['name', 'absenceType', 'description', 'hoursAbsent', 'date'].map((header) => (
+              {[
+                'name',
+                'absenceType',
+                'description',
+                'hoursAbsent',
+                'date',
+              ].map((header) => (
                 <th key={header} className="w-1/5">
                   <div>
                     <p className="pb-2 font-extrabold text-base">{header}</p>
@@ -162,24 +230,12 @@ const AbsenceTable: React.FC = () => {
           <tbody>
             {filteredData.length > 0 ? (
               filteredData.map((item) => (
-                <tr key={item.absenceId} className="hover:bg-base-100">
-                  <td>{item.name}</td>
-                  <td>{item.absenceType}</td>
-                  <td>{item.description}</td>
-                  <td>{item.hoursAbsent}</td>
-                  <td>{item.date}</td>
-                  <td>
-                    <button className="btn btn-error btn-sm mb-2" onClick={() => handleEditAbsence(item)}>
-                      Editar
-                    </button>
-                    <button
-                      className="btn btn-error btn-sm"
-                      onClick={() => handleDeleteAbsence(item.absenceId)}
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
+                <AbsenceRow
+                  key={item.absenceId}
+                  item={item}
+                  onEdit={handleEditAbsence}
+                  onDelete={handleDeleteAbsence}
+                />
               ))
             ) : (
               <tr>
@@ -202,7 +258,9 @@ const AbsenceTable: React.FC = () => {
             className="input input-bordered w-full mb-4"
             value={editingAbsence?.name || ''}
             onChange={(e) =>
-              setEditingAbsence((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+              setEditingAbsence((prev) =>
+                prev ? { ...prev, name: e.target.value } : prev
+              )
             }
           />
           <select
@@ -249,7 +307,9 @@ const AbsenceTable: React.FC = () => {
             className="input input-bordered w-full"
             value={editingAbsence?.date || ''}
             onChange={(e) =>
-              setEditingAbsence((prev) => (prev ? { ...prev, date: e.target.value } : prev))
+              setEditingAbsence((prev) =>
+                prev ? { ...prev, date: e.target.value } : prev
+              )
             }
           />
           <div className="modal-action">

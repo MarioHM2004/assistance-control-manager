@@ -1,16 +1,40 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AbsenceType } from '../models/types';
 
-export const AbsenceTypesTable: React.FC = () => {
+const AbsenceTypeRow = React.memo(
+  ({
+    type,
+    onDelete,
+  }: {
+    type: AbsenceType;
+    onDelete: (id: number) => void;
+  }) => (
+    <tr className="hover:bg-base-100">
+      <td className="text-base">{type.TYPE}</td>
+      <td>
+        <button
+          className="btn btn-error btn-sm text-base"
+          onClick={() => onDelete(type.ABSENCE_TYPE_ID)}
+        >
+          Eliminar
+        </button>
+      </td>
+    </tr>
+  )
+);
+
+const AbsenceTypesTable: React.FC = () => {
   const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
   const [filter, setFilter] = useState('');
   const [newAbsenceType, setNewAbsenceType] = useState('');
-  const [error, setError] = useState<String | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAbsenceTypes = async () => {
       try {
-        const result = await window.electron.ipcRenderer.invoke('get-absence-types');
+        const result = await window.electron.ipcRenderer.invoke(
+          'get-absence-types'
+        );
         setAbsenceTypes(result);
       } catch (error) {
         console.error('Error fetching absence types:', error);
@@ -19,60 +43,88 @@ export const AbsenceTypesTable: React.FC = () => {
     fetchAbsenceTypes();
   }, []);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter(e.target.value);
-  };
-
-  const filteredAbsenceTypes = absenceTypes.filter((type) =>
-    type.TYPE.toLowerCase().includes(filter.toLowerCase())
+  const handleFilterChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFilter(e.target.value);
+    },
+    []
   );
 
-  const handleAddAbsenceType = async () => {
+  const resetModalState = useCallback(() => {
+    setNewAbsenceType('');
+    const checkbox = document.getElementById(
+      'add-absence-type-modal'
+    ) as HTMLInputElement;
+    if (checkbox) checkbox.checked = false;
+  }, []);
+
+  const handleAddAbsenceType = useCallback(async () => {
     try {
-      const result = await window.electron.ipcRenderer.invoke('add-absence-type', {
-        type: newAbsenceType,
-      });
+      const result = await window.electron.ipcRenderer.invoke(
+        'add-absence-type',
+        {
+          type: newAbsenceType.trim(),
+        }
+      );
       if (result > 0) {
-        setAbsenceTypes([...absenceTypes, { ABSENCE_TYPE_ID: result, TYPE: newAbsenceType }]);
+        setAbsenceTypes((prev) => [
+          ...prev.filter((type) => type.ABSENCE_TYPE_ID !== result),
+          { ABSENCE_TYPE_ID: result, TYPE: newAbsenceType.trim() },
+        ]);
         resetModalState();
       }
     } catch (error) {
       console.error('Error adding absence type:', error);
     }
-  };
+  }, [newAbsenceType, resetModalState]);
 
-  const handleDeleteAbsenceType = async (id: number) => {
+  const handleDeleteAbsenceType = useCallback(async (id: number) => {
     try {
-      setError('');
-      const result = await window.electron.ipcRenderer.invoke('delete-absence-type', {
-        absenceTypeId: id,
-      });
+      setError(null);
+      const result = await window.electron.ipcRenderer.invoke(
+        'delete-absence-type',
+        {
+          absenceTypeId: id,
+        }
+      );
       if (result > 0) {
-        setAbsenceTypes(absenceTypes.filter((type) => type.ABSENCE_TYPE_ID !== id));
+        setAbsenceTypes((prev) =>
+          prev.filter((type) => type.ABSENCE_TYPE_ID !== id)
+        );
       }
     } catch (error) {
-      if (error instanceof Error && error.message.includes('related absences')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('related absences')
+      ) {
         setError(
-          'Error: No se puede eliminar este tipo de falta porque tiene faltas relacionadas.'
+          'No se puede eliminar este tipo de falta porque tiene faltas relacionadas.'
         );
         setTimeout(() => setError(null), 3000);
       } else {
         console.error('Error deleting absence type:', error);
       }
     }
-  };
+  }, []);
 
-  const resetModalState = () => {
-    setNewAbsenceType('');
-    const checkbox = document.getElementById('add-absence-type-modal') as HTMLInputElement;
-    if (checkbox) checkbox.checked = false;
-  };
+  const filteredAbsenceTypes = useMemo(() => {
+    const uniqueTypes = new Map();
+    absenceTypes.forEach((type) => {
+      uniqueTypes.set(type.ABSENCE_TYPE_ID, type);
+    });
+    return Array.from(uniqueTypes.values()).filter((type) =>
+      type.TYPE.toLowerCase().includes(filter.toLowerCase())
+    );
+  }, [absenceTypes, filter]);
 
   return (
     <div className="container mx-auto pt-8 xl:pr-16 xl:pl-16 sm:pl-2 pb-8">
       <div className="pb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Lista de Tipos de Ausencia</h1>
-        <label htmlFor="add-absence-type-modal" className="btn btn-primary sm:btn-sm md:btn-md lg:btn-md">
+        <label
+          htmlFor="add-absence-type-modal"
+          className="btn btn-primary sm:btn-sm md:btn-md lg:btn-md"
+        >
           Añadir Tipo de Ausencia
         </label>
       </div>
@@ -80,12 +132,11 @@ export const AbsenceTypesTable: React.FC = () => {
         <table className="table w-full">
           <thead className="sticky top-0 bg-base-300">
             <tr>
-              <th className="w-1/5">
-                <span className="font-extrabold text-base">ID</span>
-              </th>
-              <th className="w-3/5">
+              <th className="w-4/5">
                 <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-base">Tipo de Falta</span>
+                  <span className="font-extrabold text-base">
+                    Tipo de Falta
+                  </span>
                   <input
                     type="text"
                     placeholder="Filtrar por tipo"
@@ -103,22 +154,15 @@ export const AbsenceTypesTable: React.FC = () => {
           <tbody>
             {filteredAbsenceTypes.length > 0 ? (
               filteredAbsenceTypes.map((type) => (
-                <tr key={type.ABSENCE_TYPE_ID} className="hover:bg-base-100">
-                  <td className="text-base">{type.ABSENCE_TYPE_ID}</td>
-                  <td className="text-base">{type.TYPE}</td>
-                  <td>
-                    <button
-                      className="btn btn-error btn-sm text-base"
-                      onClick={() => handleDeleteAbsenceType(type.ABSENCE_TYPE_ID)}
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
+                <AbsenceTypeRow
+                  key={`${type.ABSENCE_TYPE_ID}-${type.TYPE}`}
+                  type={type}
+                  onDelete={handleDeleteAbsenceType}
+                />
               ))
             ) : (
               <tr>
-                <td colSpan={3} className="text-center">
+                <td colSpan={2} className="text-center">
                   No se encontraron resultados
                 </td>
               </tr>
@@ -132,7 +176,11 @@ export const AbsenceTypesTable: React.FC = () => {
         </div>
       )}
 
-      <input type="checkbox" id="add-absence-type-modal" className="modal-toggle" />
+      <input
+        type="checkbox"
+        id="add-absence-type-modal"
+        className="modal-toggle"
+      />
       <div className="modal">
         <div className="modal-box">
           <h3 className="font-bold text-lg pb-4">Añadir Tipo de Ausencia</h3>

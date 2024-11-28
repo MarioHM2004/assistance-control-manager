@@ -32,7 +32,10 @@ function handleAddEmployees(db) {
         "INSERT INTO Employees (NAME, STATUS_ID) VALUES (@name, @status_id)"
       );
       const result = stmt.run({ name: employee.name, status_id: employee.status_id });
-      return result.changes;
+
+      db.exec("PRAGMA foreign_keys = ON;");
+
+      return result.lastInsertRowid;
     } catch (error) {
       console.error("Error adding employee:", error.message);
       throw error;
@@ -41,20 +44,36 @@ function handleAddEmployees(db) {
 }
 
 function handleEditEmployees(db) {
-  ipcMain.handle("edit-employees", (event, employee) => {
+  ipcMain.handle("edit-employees", async (event, employee) => {
     if (!db) {
       throw new Error("Database not initialized");
     }
 
     if (!employee || !employee.id || !employee.name || !employee.status_id) {
-      throw new Error("Missing required fields: id, name or status_id");
+      throw new Error("Missing required fields: id, name, or status_id");
     }
 
     try {
+      const checkStmt = db.prepare("SELECT 1 FROM Employees WHERE EMPLOYEE_ID = @id");
+      const exists = checkStmt.get({ id: employee.id });
+
+      if (!exists) {
+        throw new Error("No employee found with the given ID.");
+      }
+
       const stmt = db.prepare(
         "UPDATE Employees SET NAME = @name, STATUS_ID = @status_id WHERE EMPLOYEE_ID = @id"
       );
-      const result = stmt.run({ id: employee.id, name: employee.name, status_id: employee.status_id });
+      const result = stmt.run({
+        id: employee.id,
+        name: employee.name,
+        status_id: employee.status_id,
+      });
+
+      if (result.changes === 0) {
+        throw new Error("No changes were made to the employee.");
+      }
+
       return result.changes;
     } catch (error) {
       console.error("Error editing employee:", error.message);
@@ -64,14 +83,26 @@ function handleEditEmployees(db) {
 }
 
 function handleDeleteEmployees(db) {
-  ipcMain.handle("delete-employees", (event, id) => {
+  ipcMain.handle("delete-employees", async (event, id) => {
     if (!db) {
       throw new Error("Database not initialized");
     }
 
     try {
+      const checkStmt = db.prepare("SELECT 1 FROM Employees WHERE EMPLOYEE_ID = @id");
+      const exists = checkStmt.get({ id });
+
+      if (!exists) {
+        throw new Error("No employee found with the given ID.");
+      }
+
       const stmt = db.prepare("DELETE FROM Employees WHERE EMPLOYEE_ID = @id");
       const result = stmt.run({ id });
+
+      if (result.changes === 0) {
+        throw new Error("Failed to delete the employee.");
+      }
+
       return result.changes;
     } catch (error) {
       console.error("Error deleting employee:", error.message);

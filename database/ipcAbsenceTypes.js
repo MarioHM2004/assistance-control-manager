@@ -23,10 +23,17 @@ function handleAddAbsenceType(db) {
       throw new Error('Database not initialized');
     }
 
+    if (!absenceType || !absenceType.type) {
+      throw new Error('Missing required field: type');
+    }
+
     try {
       const stmt = db.prepare('INSERT INTO AbsenceTypes (TYPE) VALUES (?)');
-      const result = stmt.run( absenceType.type );
-      return result.changes > 0 ? 1 : 0;
+      const result = stmt.run(absenceType.type);
+
+      db.exec("PRAGMA foreign_keys = ON;");
+
+      return result.lastInsertRowid;
     } catch (error) {
       console.error('Error adding absence type:', error.message);
       throw error;
@@ -41,7 +48,6 @@ function handleDeleteAbsenceType(db) {
     }
 
     try {
-      // Check if there are related records in Absences
       const checkStmt = db.prepare('SELECT COUNT(*) AS count FROM Absences WHERE ABSENCE_TYPE_ID = ?');
       const { count } = checkStmt.get(absenceType.absenceTypeId);
 
@@ -49,7 +55,6 @@ function handleDeleteAbsenceType(db) {
         throw new Error('Cannot delete: this absence type has related absences.');
       }
 
-      // Delete from AbsenceTypes if there are no related records
       const stmt = db.prepare('DELETE FROM AbsenceTypes WHERE ABSENCE_TYPE_ID = ?');
       const result = stmt.run(absenceType.absenceTypeId);
 

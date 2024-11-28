@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import { HashRouter, Route, Routes, Navigate } from 'react-router-dom';
-import reportWebVitals from './reportWebVitals';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/navBar/Layout';
-import { Login } from './pages/Login';
-import { Dashboard } from './pages/Dashboard';
-import { Absence } from './pages/Absence';
-import { Employees } from './pages/Employees';
-import { AbsenceTypes } from './pages/AbsenceTypes';
 import { AuthProvider } from './components/auth/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import reportWebVitals from './reportWebVitals';
+import { Spinner } from './components/assets/Spinner';
+
+const Login = React.lazy(() => import('./pages/Login'));
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Absence = React.lazy(() => import('./pages/Absence'));
+const Employees = React.lazy(() => import('./pages/Employees'));
+const AbsenceTypes = React.lazy(() => import('./pages/AbsenceTypes'));
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -21,17 +23,62 @@ root.render(
     <AuthProvider>
       <HashRouter>
         <Routes>
-          {/* Rutas no protegidas */}
+          {/* Layout siempre visible */}
           <Route element={<Layout />}>
-            <Route path="/login" element={<Login />} />
+            <Route
+              path="/login"
+              element={
+                <Suspense fallback={<Spinner />}>
+                  <Login />
+                </Suspense>
+              }
+            />
 
             {/* Rutas protegidas */}
             <Route path="/" element={<ProtectedRoute />}>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/absence" element={<Absence />} />
-              <Route path="/employees" element={<Employees />} />
-              <Route path="/absenceTypes" element={<AbsenceTypes />} />
+              <Route
+                path="/"
+                element={
+                  <>
+                    <Navigate to="/dashboard" replace />
+                    <Suspense fallback={<Spinner />}>
+                      <Dashboard />
+                    </Suspense>
+                  </>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <Suspense fallback={<Spinner />}>
+                    <Dashboard />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/absence"
+                element={
+                  <Suspense fallback={<Spinner />}>
+                    <Absence />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/employees"
+                element={
+                  <Suspense fallback={<Spinner />}>
+                    <Employees />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/absenceTypes"
+                element={
+                  <Suspense fallback={<Spinner />}>
+                    <AbsenceTypes />
+                  </Suspense>
+                }
+              />
             </Route>
           </Route>
         </Routes>

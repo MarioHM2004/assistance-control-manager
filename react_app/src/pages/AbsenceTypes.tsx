@@ -1,9 +1,11 @@
-import { AbsenceTypesTable } from "../components/tables/AbsenceTypesTable";
+import AbsenceTypesTable from '../components/tables/AbsenceTypesTable';
 
-export const AbsenceTypes: React.FC = () => {
+const AbsenceTypes: React.FC = () => {
   return (
     <div>
       <AbsenceTypesTable />
     </div>
   );
-}
+};
+
+export default AbsenceTypes;
