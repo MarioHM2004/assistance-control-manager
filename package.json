@@ -20,6 +20,7 @@
   "author": "Mario A. Herranz",
   "license": "MIT",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "better-sqlite3": "^11.3.0",
     "exceljs": "^4.4.0"
   },

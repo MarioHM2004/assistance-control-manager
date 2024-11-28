@@ -7,6 +7,7 @@ const { handleEmployees } = require('./database/ipcEmployees');
 const { handleAbsenceTypes } = require('./database/ipcAbsenceTypes');
 const { handleAbsences } = require('./database/ipcAbsences');
 const { handleExportation } = require('./exportation/ipcExcel');
+const { handleLoginAdmin } = require('./database/ipcAdmins');
 
 let db;
 
@@ -95,6 +96,7 @@ function createWindow() {
 app.whenReady().then(() => {
   createDatabase();
   createWindow();
+  handleLoginAdmin(db);
   handleEmployees(db);
   handleAbsenceTypes(db);
   handleAbsences(db);
