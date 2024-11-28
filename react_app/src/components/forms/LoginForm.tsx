@@ -1,29 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 
 export const LoginForm: React.FC = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-
   const [loginMessage, setLoginMessage] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const HandleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUsername(e.target.value);
   };
 
-  const HandlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
   };
 
-  useEffect(() => {
-  }, []);
-
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (username === 'admin' && password === 'admin') {
-      setLoginMessage({ message: 'Inicio de sesión exitoso', type: 'success' });
-    } else {
-      setLoginMessage({ message: 'Usuario o contraseña incorrectos', type: 'error' });
+    try {
+      const response = await window.electron.ipcRenderer.invoke('login-admin', { username, password });
+
+      if (response.success) {
+        setLoginMessage({ message: response.message, type: 'success' });
+        login();
+        navigate('/dashboard');
+      } else {
+        setLoginMessage({ message: response.message, type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+      setLoginMessage({ message: 'Error interno del servidor', type: 'error' });
     }
   };
 
@@ -44,7 +53,7 @@ export const LoginForm: React.FC = () => {
                 placeholder="Introduzca su usuario"
                 className="input input-bordered input-md"
                 value={username}
-                onChange={HandleUsernameChange}
+                onChange={handleUsernameChange}
               />
             </div>
             <div className="form-control mt-4">
@@ -56,7 +65,7 @@ export const LoginForm: React.FC = () => {
                 placeholder="Introduzca su contraseña"
                 className="input input-bordered input-md"
                 value={password}
-                onChange={HandlePasswordChange}
+                onChange={handlePasswordChange}
               />
             </div>
             <div className="form-control mt-12">
@@ -67,7 +76,7 @@ export const LoginForm: React.FC = () => {
             {loginMessage && (
               <div className={`alert mt-4 ${loginMessage.type === 'success' ? 'alert-success' : 'alert-error'}`}>
                 <span>{loginMessage.message}</span>
-            </div>
+              </div>
             )}
           </form>
         </div>
