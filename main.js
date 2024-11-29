@@ -90,6 +90,7 @@ function createWindow() {
       protocol: 'file:',
     });
     mainWindow.loadURL(startUrl);
+    mainWindow.webContents.closeDevTools();
   }
 }
 

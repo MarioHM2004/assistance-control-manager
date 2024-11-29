@@ -204,11 +204,11 @@ const AbsenceTable: React.FC = () => {
           <thead className="sticky top-0 bg-base-300">
             <tr>
               {[
-                'name',
-                'absenceType',
-                'description',
-                'hoursAbsent',
-                'date',
+                'Nombre',
+                'Tipo de Falta',
+                'descripción',
+                'horas faltadas',
+                'Fecha',
               ].map((header) => (
                 <th key={header} className="w-1/5">
                   <div>

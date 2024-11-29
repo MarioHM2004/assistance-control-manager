@@ -1,9 +1,15 @@
 const { ipcMain } = require('electron');
+const cache = require('./cache');
 
 function handleGetAbsences(db) {
   ipcMain.handle('get-absences', (event) => {
     if (!db) {
       throw new Error('Database not initialized');
+    }
+    // Check cache first
+    const cachedAbsences = cache.get('absences');
+    if (cachedAbsences) {
+      return cachedAbsences;
     }
 
     try {
@@ -23,6 +29,9 @@ function handleGetAbsences(db) {
       `;
       const stmt = db.prepare(query);
       const absences = stmt.all();
+
+      // Store result in cache
+      cache.set('absences', absences);
       return absences;
     } catch (error) {
       console.error('Error getting absences:', error.message);
@@ -30,7 +39,6 @@ function handleGetAbsences(db) {
     }
   });
 }
-
 
 function handleCreateAbsence(db) {
   ipcMain.handle('create-absence', (event, absence) => {
@@ -51,6 +59,9 @@ function handleCreateAbsence(db) {
         absence.date,
         absence.statusId
       );
+
+      // Invalidate cache
+      cache.invalidate('absences');
       return result;
     } catch (error) {
       console.error('Error creating absence:', error.message);
@@ -64,7 +75,6 @@ function handleEditAbsence(db) {
     if (!db) {
       throw new Error('Database not initialized');
     }
-    console.log('Datos recibidos en el backend:', absence);
 
     try {
       const stmt = db.prepare(
@@ -77,6 +87,9 @@ function handleEditAbsence(db) {
         hoursAbsent: absence.hoursAbsent,
         date: absence.date,
       });
+
+      // Invalidate cache
+      cache.invalidate('absences');
       return result.changes > 0 ? 1 : 0;
     } catch (error) {
       console.error('Error editing absence:', error.message);
@@ -94,6 +107,9 @@ function handleDeleteAbsence(db) {
     try {
       const stmt = db.prepare('DELETE FROM Absences WHERE ABSENCE_ID = @absenceId');
       const result = stmt.run({ absenceId: id });
+
+      // Invalidate cache
+      cache.invalidate('absences');
       return result.changes > 0 ? 1 : 0;
     } catch (error) {
       console.error('Error deleting absence:', error.message);

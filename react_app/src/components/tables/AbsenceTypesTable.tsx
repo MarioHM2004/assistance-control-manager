@@ -120,12 +120,12 @@ const AbsenceTypesTable: React.FC = () => {
   return (
     <div className="container mx-auto pt-8 xl:pr-16 xl:pl-16 sm:pl-2 pb-8">
       <div className="pb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Lista de Tipos de Ausencia</h1>
+        <h1 className="text-xl font-bold">Lista de Tipos de Falta</h1>
         <label
           htmlFor="add-absence-type-modal"
           className="btn btn-primary sm:btn-sm md:btn-md lg:btn-md"
         >
-          Añadir Tipo de Ausencia
+          Añadir Tipo de Falta
         </label>
       </div>
       <div className="max-h-96 overflow-y-auto overflow-x-auto bg-base-200 shadow-lg rounded-lg">
@@ -183,10 +183,10 @@ const AbsenceTypesTable: React.FC = () => {
       />
       <div className="modal">
         <div className="modal-box">
-          <h3 className="font-bold text-lg pb-4">Añadir Tipo de Ausencia</h3>
+          <h3 className="font-bold text-lg pb-4">Añadir Tipo de Falta</h3>
           <input
             type="text"
-            placeholder="Nombre del tipo de ausencia"
+            placeholder="Nombre del tipo de falta"
             className="input input-bordered w-full"
             value={newAbsenceType}
             onChange={(e) => setNewAbsenceType(e.target.value)}

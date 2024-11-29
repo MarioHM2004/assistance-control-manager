@@ -1,14 +1,24 @@
 const { ipcMain } = require('electron');
+const cache = require('./cache'); // Import the generic cache utility
 
 function handleGetEmployees(db) {
   ipcMain.handle("get-employees", (event) => {
     if (!db) {
       throw new Error("Database not initialized");
     }
+    // Check if the data is already cached
+    const cachedEmployees = cache.get("employees");
+    if (cachedEmployees) {
+      return cachedEmployees;
+    }
 
     try {
       const stmt = db.prepare("SELECT * FROM Employees");
       const employees = stmt.all();
+
+      // Cache the query result
+      cache.set("employees", employees);
+
       return employees;
     } catch (error) {
       console.error("Error getting employees:", error.message);
@@ -31,9 +41,15 @@ function handleAddEmployees(db) {
       const stmt = db.prepare(
         "INSERT INTO Employees (NAME, STATUS_ID) VALUES (@name, @status_id)"
       );
-      const result = stmt.run({ name: employee.name, status_id: employee.status_id });
+      const result = stmt.run({
+        name: employee.name,
+        status_id: employee.status_id,
+      });
 
       db.exec("PRAGMA foreign_keys = ON;");
+
+      // Invalidate the cache after adding a new employee
+      cache.invalidate("employees");
 
       return result.lastInsertRowid;
     } catch (error) {
@@ -74,6 +90,9 @@ function handleEditEmployees(db) {
         throw new Error("No changes were made to the employee.");
       }
 
+      // Invalidate the cache after editing an employee
+      cache.invalidate("employees");
+
       return result.changes;
     } catch (error) {
       console.error("Error editing employee:", error.message);
@@ -102,6 +121,9 @@ function handleDeleteEmployees(db) {
       if (result.changes === 0) {
         throw new Error("Failed to delete the employee.");
       }
+
+      // Invalidate the cache after deleting an employee
+      cache.invalidate("employees");
 
       return result.changes;
     } catch (error) {
