@@ -50,11 +50,11 @@ const AbsenceTable: React.FC = () => {
 
   const keyMapping = useMemo(
     () => ({
-      name: 'name',
-      absenceType: 'absenceType',
-      description: 'description',
-      hoursAbsent: 'hoursAbsent',
-      date: 'date',
+      'Nombre': 'name',
+      'Tipo de Falta': 'absenceType',
+      'descripción': 'description',
+      'horas faltadas': 'hoursAbsent',
+      'Fecha': 'date',
     }),
     []
   );
@@ -79,26 +79,18 @@ const AbsenceTable: React.FC = () => {
   const filteredData = useMemo(() => {
     return data.filter((item) => {
       return (
-        Object.keys(filters).every((key) => {
-          if (key === 'hoursAbsent') return true;
-          const keyTyped = key as keyof typeof keyMapping;
-          const value = item[keyMapping[keyTyped] as keyof Absence];
-          const filterValue = filters[key as keyof typeof filters];
-
-          if (!filterValue) return true;
-          return value
-            ?.toString()
-            .toLowerCase()
-            .includes(filterValue.toLowerCase());
-        }) &&
-        (!filters.hoursAbsent ||
-          item.hoursAbsent === parseFloat(filters.hoursAbsent))
+        Object.entries(filters).every(([key, value]) => {
+          const mappedKey = keyMapping[key as keyof typeof keyMapping];
+          if (!value || !mappedKey) return true;
+          const itemValue = item[mappedKey as keyof Absence];
+          return itemValue?.toString().toLowerCase().includes(value.toLowerCase());
+        })
       );
     });
   }, [data, filters, keyMapping]);
 
   const handleFilterChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       setFilters((prevFilters) => ({
         ...prevFilters,
         [e.target.name]: e.target.value,
@@ -200,14 +192,8 @@ const AbsenceTable: React.FC = () => {
       <div className="max-h-96 overflow-y-auto overflow-x-auto bg-base-200 shadow-lg rounded-lg">
         <table className="table w-full">
           <thead className="sticky top-0 bg-base-300">
-            <tr>
-              {[
-                'Nombre',
-                'Tipo de Falta',
-                'descripción',
-                'horas faltadas',
-                'Fecha',
-              ].map((header) => (
+          <tr>
+              {Object.keys(keyMapping).map((header) => (
                 <th key={header} className="w-1/5">
                   <div>
                     <p className="pb-2 font-extrabold text-base">{header}</p>
