@@ -60,22 +60,20 @@ const AbsenceTable: React.FC = () => {
   );
 
   useEffect(() => {
-    const fetchAbsences = async () => {
+    const fetchData = async () => {
       try {
-        const result: Absence[] = await window.electron.ipcRenderer.invoke(
-          'get-absences'
-        );
-        const typesResponse = await window.electron.ipcRenderer.invoke(
-          'get-absence-types'
-        );
-        setData(result);
-        setAbsenceTypes(typesResponse);
+        const [absences, absenceTypes] = await Promise.all([
+          window.electron.ipcRenderer.invoke('get-absences'),
+          window.electron.ipcRenderer.invoke('get-absence-types'),
+        ]);
+        setData(absences);
+        setAbsenceTypes(absenceTypes);
       } catch (error) {
-        console.error('Error fetching absences:', error);
+        console.error('Error fetching data:', error);
       }
     };
 
-    fetchAbsences();
+    fetchData();
   }, []);
 
   const filteredData = useMemo(() => {
