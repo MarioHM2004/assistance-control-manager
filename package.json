@@ -5,9 +5,11 @@
   "description": "Assistance control manager",
   "main": "main.js",
   "scripts": {
+    "install:react": "npm --prefix react_app install",
     "rebuild": "electron-rebuild",
     "start": "electron .",
     "start:dev": "npx electronmon --trace-warnings .",
+    "start:react": "npm --prefix react_app start",
     "postinstall": "electron-builder install-app-deps",
     "react-build": "npm --prefix react_app run build",
     "package": "electron-builder"
