@@ -1,69 +1,29 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
-const fs = require('fs');
-const Database = require('better-sqlite3');
 const url = require('url');
+const mysql = require('mysql2/promise');
 const { handleEmployees } = require('./database/ipcEmployees');
 const { handleAbsenceTypes } = require('./database/ipcAbsenceTypes');
 const { handleAbsences } = require('./database/ipcAbsences');
 const { handleExportation } = require('./exportation/ipcExcel');
 const { handleLoginAdmin } = require('./database/ipcAdmins');
 
-let db;
+let dbConnection;
 
 const isDev = !app.isPackaged;
 
-const initialDbPath = isDev
-  ? path.join(__dirname, 'sqlite.db')
-  : path.join(process.resourcesPath, 'sqlite.db');
-
-function copyDatabaseToUserData() {
-  const userDbPath = path.join(app.getPath('userData'), 'sqlite.db');
-  console.log('Expected route for initial database:', initialDbPath);
-  console.log('Destination route in userData:', userDbPath);
-
+async function connectToDatabase() {
   try {
-    if (!fs.existsSync(initialDbPath)) {
-      throw new Error(`The initial file sqlite.db is not in: ${initialDbPath}`);
-    }
-    const initialStats = fs.statSync(initialDbPath);
-    console.log('Initial size of sqlite.db:', initialStats.size, 'bytes');
-    if (initialStats.size === 0) {
-      throw new Error(`The initial file sqlite.db is empty: ${initialDbPath}`);
-    }
-
-    if (fs.existsSync(userDbPath)) {
-      const userStats = fs.statSync(userDbPath);
-      if (userStats.size > 0) {
-        console.log('The database already exists in userData and is not empty. Size:', userStats.size, 'bytes');
-        return userDbPath;
-      } else {
-        console.warn('Database in userData is empty. Overwriting...');
-      }
-    }
-    console.log('Copying database to userData directory...');
-    fs.copyFileSync(initialDbPath, userDbPath);
-    console.log('Database copied to userData:', userDbPath);
-
-    const copiedStats = fs.statSync(userDbPath);
-    console.log('Size of file copied to userData:', copiedStats.size, 'bytes');
-    if (copiedStats.size === 0) {
-      throw new Error('The file copied to userData is empty.');
-    }
+    dbConnection = await mysql.createConnection({
+      host: 'localhost',
+      user: 'acm_user',
+      password: 'acm_password',
+      database: 'acm',
+    });
+    console.log('Conexión a MySQL establecida.');
   } catch (error) {
-    console.error('Error copying database:', error.message);
-  }
-
-  return userDbPath;
-}
-
-function createDatabase() {
-  const dbPath = copyDatabaseToUserData();
-  try {
-    db = new Database(dbPath, { verbose: console.log });
-    console.log('Database initialized successfully from:', dbPath);
-  } catch (error) {
-    console.error('Error initializing database:', error.message);
+    console.error('Error conectándose a MySQL:', error.message);
+    app.quit();
   }
 }
 
@@ -94,18 +54,20 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(() => {
-  createDatabase();
+app.whenReady().then(async () => {
+  await connectToDatabase();
   createWindow();
-  handleLoginAdmin(db);
-  handleEmployees(db);
-  handleAbsenceTypes(db);
-  handleAbsences(db);
+
+  handleLoginAdmin(dbConnection);
+  handleEmployees(dbConnection);
+  handleAbsenceTypes(dbConnection);
+  handleAbsences(dbConnection);
   handleExportation();
 });
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    if (dbConnection) dbConnection.end();
     app.quit();
   }
 });

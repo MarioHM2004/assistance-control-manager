@@ -1,92 +1,97 @@
-const { ipcMain } = require('electron');
-const cache = require('./cache'); // Import the generic cache utility
+const { ipcMain } = require("electron");
+const cache = require("./cache");
 
-function handleGetAbsenceTypes(db) {
-  ipcMain.handle('get-absence-types', (event) => {
-    if (!db) {
-      throw new Error('Database not initialized');
+function handleGetAbsenceTypes(dbConnection) {
+  ipcMain.handle("get-absence-types", async (event) => {
+    if (!dbConnection) {
+      throw new Error("Database not initialized");
     }
 
-    // Check the cache for existing data
-    const cachedAbsenceTypes = cache.get('absenceTypes');
+    const cachedAbsenceTypes = cache.get("absenceTypes");
     if (cachedAbsenceTypes) {
       return cachedAbsenceTypes;
     }
 
     try {
-      const stmt = db.prepare('SELECT * FROM AbsenceTypes');
-      const absenceTypes = stmt.all();
+      const [absenceTypes] = await dbConnection.execute("SELECT * FROM AbsenceTypes");
 
-      // Store the result in the cache
-      cache.set('absenceTypes', absenceTypes);
+      cache.set("absenceTypes", absenceTypes);
 
       return absenceTypes;
     } catch (error) {
-      console.error('Error getting absence types:', error.message);
+      console.error("Error getting absence types:", error.message);
       throw error;
     }
   });
 }
 
-function handleAddAbsenceType(db) {
-  ipcMain.handle('add-absence-type', (event, absenceType) => {
-    if (!db) {
-      throw new Error('Database not initialized');
+function handleAddAbsenceType(dbConnection) {
+  ipcMain.handle("add-absence-type", async (event, absenceType) => {
+    if (!dbConnection) {
+      throw new Error("Database not initialized");
     }
 
     if (!absenceType || !absenceType.type) {
-      throw new Error('Missing required field: type');
+      throw new Error("Missing required field: type");
     }
 
     try {
-      const stmt = db.prepare('INSERT INTO AbsenceTypes (TYPE) VALUES (?)');
-      const result = stmt.run(absenceType.type);
+      const [result] = await dbConnection.execute(
+        "INSERT INTO AbsenceTypes (TYPE) VALUES (?)",
+        [absenceType.type]
+      );
 
-      db.exec("PRAGMA foreign_keys = ON;");
+      cache.invalidate("absenceTypes");
 
-      // Invalidate the cache after adding a new absence type
-      cache.invalidate('absenceTypes');
-
-      return result.lastInsertRowid;
+      return result.insertId;
     } catch (error) {
-      console.error('Error adding absence type:', error.message);
+      console.error("Error adding absence type:", error.message);
       throw error;
     }
   });
 }
 
-function handleDeleteAbsenceType(db) {
-  ipcMain.handle('delete-absence-type', (event, absenceType) => {
-    if (!db) {
-      throw new Error('Database not initialized');
+function handleDeleteAbsenceType(dbConnection) {
+  ipcMain.handle("delete-absence-type", async (event, absenceType) => {
+    if (!dbConnection) {
+      throw new Error("Database not initialized");
+    }
+
+    if (!absenceType || !absenceType.absenceTypeId) {
+      throw new Error("Missing required field: absenceTypeId");
     }
 
     try {
-      const checkStmt = db.prepare('SELECT COUNT(*) AS count FROM Absences WHERE ABSENCE_TYPE_ID = ?');
-      const { count } = checkStmt.get(absenceType.absenceTypeId);
+      const [relatedAbsences] = await dbConnection.execute(
+        "SELECT COUNT(*) AS count FROM Absences WHERE ABSENCE_TYPE_ID = ?",
+        [absenceType.absenceTypeId]
+      );
 
-      if (count > 0) {
-        throw new Error('Cannot delete: this absence type has related absences.');
+      if (relatedAbsences[0].count > 0) {
+        throw new Error(
+          "Cannot delete: this absence type has related absences."
+        );
       }
 
-      const stmt = db.prepare('DELETE FROM AbsenceTypes WHERE ABSENCE_TYPE_ID = ?');
-      const result = stmt.run(absenceType.absenceTypeId);
+      const [result] = await dbConnection.execute(
+        "DELETE FROM AbsenceTypes WHERE ABSENCE_TYPE_ID = ?",
+        [absenceType.absenceTypeId]
+      );
 
-      // Invalidate the cache after deleting an absence type
-      cache.invalidate('absenceTypes');
+      cache.invalidate("absenceTypes");
 
-      return result.changes > 0 ? 1 : 0;
+      return result.affectedRows > 0 ? 1 : 0;
     } catch (error) {
-      console.error('Error deleting absence type:', error.message);
+      console.error("Error deleting absence type:", error.message);
       throw error;
     }
   });
 }
 
-function handleAbsenceTypes(db) {
-  handleGetAbsenceTypes(db);
-  handleAddAbsenceType(db);
-  handleDeleteAbsenceType(db);
+function handleAbsenceTypes(dbConnection) {
+  handleGetAbsenceTypes(dbConnection);
+  handleAddAbsenceType(dbConnection);
+  handleDeleteAbsenceType(dbConnection);
 }
 
 module.exports = { handleAbsenceTypes };

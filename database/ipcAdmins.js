@@ -1,10 +1,10 @@
 const { ipcMain } = require('electron');
 const bcrypt = require('bcrypt');
-const cache = require('./cache'); // Import the generic cache utility
+const cache = require('./cache');
 
-function handleLoginAdmin(db) {
+function handleLoginAdmin(dbConnection) {
   ipcMain.handle('login-admin', async (event, { username, password }) => {
-    if (!db) {
+    if (!dbConnection) {
       throw new Error('Database not initialized');
     }
 
@@ -14,9 +14,9 @@ function handleLoginAdmin(db) {
       let admin = cache.get(cacheKey);
 
       if (!admin) {
-        // Fetch admin from the database if not in cache
-        const stmt = db.prepare('SELECT * FROM Admins WHERE username = ?');
-        admin = stmt.get(username);
+        // Fetch admin from the database using MySQL
+        const [rows] = await dbConnection.execute('SELECT * FROM Admins WHERE username = ?', [username]);
+        admin = rows[0]; // MySQL returns an array of rows
 
         if (!admin) {
           return { success: false, message: 'Admin not found' };
@@ -42,3 +42,4 @@ function handleLoginAdmin(db) {
 }
 
 module.exports = { handleLoginAdmin };
+
