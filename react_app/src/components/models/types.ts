@@ -1,6 +1,6 @@
 export interface Absence {
   absenceId: number;
-  name: string;
+  employeeName: string;
   absenceType: string;
   description: string;
   hoursAbsent: number;

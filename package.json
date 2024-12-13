@@ -21,8 +21,8 @@
   "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "better-sqlite3": "^11.3.0",
-    "exceljs": "^4.4.0"
+    "exceljs": "^4.4.0",
+    "mysql2": "^3.11.5"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.0",
@@ -40,14 +40,7 @@
       "!react_app/**/*",
       "database/**/*",
       "exportation/**/*",
-      "sqlite.db",
       "node_modules/**/*"
-    ],
-    "extraFiles": [
-      {
-        "from": "sqlite.db",
-        "to": "resources/sqlite.db"
-      }
     ],
     "directories": {
       "output": "dist"

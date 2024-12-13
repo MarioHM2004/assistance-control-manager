@@ -23,7 +23,7 @@ root.render(
     <AuthProvider>
       <HashRouter>
         <Routes>
-          {/* Layout siempre visible */}
+          {/* Layout always visible*/}
           <Route element={<Layout />}>
             <Route
               path="/login"
@@ -34,7 +34,7 @@ root.render(
               }
             />
 
-            {/* Rutas protegidas */}
+            {/*Protected routes*/}
             <Route path="/" element={<ProtectedRoute />}>
               <Route
                 path="/"

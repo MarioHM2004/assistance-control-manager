@@ -2,22 +2,39 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Absence, AbsenceType } from '../models/types';
 
+// Utility function to debounce a given function. It delays execution until after a specified time.
+function debounce<T extends (...args: any[]) => void>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), delay);
+  };
+}
+
+// Component to render a single row of the absence table.
 const AbsenceRow = React.memo(
   ({
     item,
     onEdit,
     onDelete,
   }: {
-    item: Absence;
-    onEdit: (absence: Absence) => void;
-    onDelete: (id: number) => void;
+    item: Absence; // Absence object for the row
+    onEdit: (absence: Absence) => void; // Callback for edit button
+    onDelete: (id: number) => void; // Callback for delete button
   }) => (
     <tr className="hover:bg-base-100">
-      <td>{item.name}</td>
+      <td>{item.employeeName}</td>
       <td>{item.absenceType}</td>
       <td>{item.description}</td>
       <td>{item.hoursAbsent}</td>
-      <td>{item.date}</td>
+      <td>
+        {item.date
+          ? new Date(item.date).toISOString().split('T')[0] // Format date
+          : 'Sin fecha'}
+      </td>
       <td>
         <button
           className="btn btn-error btn-sm mb-2"
@@ -36,92 +53,135 @@ const AbsenceRow = React.memo(
   )
 );
 
+// Main component for rendering and managing the absence table.
 const AbsenceTable: React.FC = () => {
-  const [data, setData] = useState<Absence[]>([]);
-  const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
+  const [data, setData] = useState<Absence[]>([]); // Table data
+  const [totalRecords, setTotalRecords] = useState(0); // Total number of records
+  const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]); // List of absence types
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
   const [filters, setFilters] = useState({
-    name: '',
-    absenceType: '',
-    description: '',
-    hoursAbsent: '',
-    date: '',
+    Nombre: '', // Employee name filter
+    'Tipo de Falta': '', // Absence type filter
+    Descripción: '', // Description filter
+    'Horas faltadas': '', // Hours absent filter
+    Fecha: '', // Date filter
   });
-  const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null);
 
+  const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null); // Absence being edited
+  const [currentPage, setCurrentPage] = useState(1); // Current page for pagination
+  const recordsPerPage = 10; // Number of records per page
+
+  // Map column headers to their respective keys for filtering
   const keyMapping = useMemo(
     () => ({
-      'Nombre': 'name',
+      Nombre: 'name',
       'Tipo de Falta': 'absenceType',
-      'descripción': 'description',
-      'horas faltadas': 'hoursAbsent',
-      'Fecha': 'date',
+      Descripción: 'description',
+      'Horas faltadas': 'hoursAbsent',
+      Fecha: 'date',
     }),
     []
   );
 
-  useEffect(() => {
-    const fetchData = async () => {
+  // Fetch data with the current filters and pagination state
+  const fetchData = useCallback(
+    async (filters: Record<string, string>) => {
       try {
-        const [absences, absenceTypes] = await Promise.all([
-          window.electron.ipcRenderer.invoke('get-absences'),
-          window.electron.ipcRenderer.invoke('get-absence-types'),
-        ]);
-        setData(absences);
-        setAbsenceTypes(absenceTypes);
+        const { absences, totalCount } =
+          await window.electron.ipcRenderer.invoke('get-absences', {
+            page: currentPage,
+            limit: recordsPerPage,
+            filters,
+          });
+
+        const processedData = absences.map((absence: Absence) => ({
+          ...absence,
+          date: new Date(absence.date).toISOString().split('T')[0], // Format date
+        }));
+
+        setData(processedData); // Set table data
+        setTotalRecords(totalCount); // Update total records count
       } catch (error) {
         console.error('Error fetching data:', error);
       }
-    };
+    },
+    [currentPage, recordsPerPage]
+  );
 
-    fetchData();
+  // Debounced fetch function to optimize filter-based data fetching
+  const debouncedFetchData = useMemo(
+    () => debounce(fetchData, 500),
+    [fetchData]
+  );
+
+  // Fetch data when filters change
+  useEffect(() => {
+    debouncedFetchData(filters);
+  }, [filters, debouncedFetchData]);
+
+  // Fetch data when the page changes
+  useEffect(() => {
+    fetchData(filters);
+  }, [currentPage, fetchData, filters]);
+
+  // Fetch absence types on component mount
+  useEffect(() => {
+    const fetchAbsenceTypes = async () => {
+      try {
+        const types = await window.electron.ipcRenderer.invoke(
+          'get-absence-types'
+        );
+        setAbsenceTypes(types);
+      } catch (error) {
+        console.error('Error fetching absence types:', error);
+      }
+    };
+    fetchAbsenceTypes();
   }, []);
 
-  const filteredData = useMemo(() => {
-    return data.filter((item) => {
-      return (
-        Object.entries(filters).every(([key, value]) => {
-          const mappedKey = keyMapping[key as keyof typeof keyMapping];
-          if (!value || !mappedKey) return true;
-          const itemValue = item[mappedKey as keyof Absence];
-          return itemValue?.toString().toLowerCase().includes(value.toLowerCase());
-        })
-      );
-    });
-  }, [data, filters, keyMapping]);
-
+  // Handle filter changes and reset pagination
   const handleFilterChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setFilters((prevFilters) => ({
         ...prevFilters,
-        [e.target.name]: e.target.value,
+        [e.target.name]: e.target.value, // Update specific filter
       }));
+      setCurrentPage(1); // Reset to the first page
     },
     []
   );
 
+  // Handle absence deletion
+  const handleDeleteAbsence = useCallback(
+    async (absenceId: number) => {
+      try {
+        const result = await window.electron.ipcRenderer.invoke(
+          'delete-absence',
+          absenceId
+        );
+        if (result > 0) {
+          fetchData(filters); // Refresh table after deletion
+        }
+      } catch (error) {
+        console.error('Error deleting absence:', error);
+      }
+    },
+    [fetchData, filters]
+  );
+
+  // Open edit modal with selected absence
   const handleEditAbsence = useCallback((absence: Absence) => {
     setEditingAbsence(absence);
-    document
-      .getElementById('edit-absence-modal')
-      ?.setAttribute('checked', 'true');
+    setIsModalOpen(true); // Open modal
   }, []);
 
-  const handleDeleteAbsence = useCallback(async (absenceId: number) => {
-    try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'delete-absence',
-        absenceId
-      );
-      if (result > 0) {
-        setData((prevData) =>
-          prevData.filter((absence) => absence.absenceId !== absenceId)
-        );
-      }
-    } catch (error) {
-      console.error('Error deleting absence:', error);
-    }
+  // Close the edit modal
+  const closeModal = useCallback(() => {
+    setIsModalOpen(false); // Close modal
+    setEditingAbsence(null); // Reset editing absence
   }, []);
 
+  // Handle absence update
   const handleUpdateAbsence = async () => {
     if (editingAbsence) {
       const selectedAbsenceType = absenceTypes.find(
@@ -135,7 +195,7 @@ const AbsenceTable: React.FC = () => {
 
       const absenceData = {
         ...editingAbsence,
-        absenceTypeId: selectedAbsenceType.ABSENCE_TYPE_ID,
+        absenceTypeId: selectedAbsenceType.ABSENCE_TYPE_ID, // Map absence type ID
       };
 
       try {
@@ -144,13 +204,7 @@ const AbsenceTable: React.FC = () => {
           absenceData
         );
         if (result > 0) {
-          setData((prevData) =>
-            prevData.map((absence) =>
-              absence.absenceId === editingAbsence.absenceId
-                ? editingAbsence
-                : absence
-            )
-          );
+          fetchData(filters); // Refresh table after update
           document
             .getElementById('edit-absence-modal')
             ?.removeAttribute('checked');
@@ -164,6 +218,7 @@ const AbsenceTable: React.FC = () => {
 
   return (
     <div className="container mx-auto pt-8 xl:pr-16 xl:pl-16 sm:pl-2 pb-8">
+      {/* Header with actions */}
       <div className="pb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Tablero</h1>
         <div>
@@ -174,14 +229,23 @@ const AbsenceTable: React.FC = () => {
             Nueva falta
           </Link>
           <button
-            onClick={() => {
-              const filteredExportData = filteredData.map(
-                ({ absenceId, employeeStatus, ...rest }) => rest
-              );
-              window.electron.ipcRenderer.invoke(
-                'export-excel',
-                filteredExportData
-              );
+            onClick={async () => {
+              try {
+                // Export absences with current filters
+                const allFilteredAbsences =
+                  await window.electron.ipcRenderer.invoke(
+                    'export-all-absences',
+                    filters
+                  );
+
+                // Export data to Excel
+                window.electron.ipcRenderer.invoke(
+                  'export-excel',
+                  allFilteredAbsences
+                );
+              } catch (error) {
+                console.error('Error exporting absences:', error);
+              }
             }}
             className="btn btn-xs sm:btn-sm md:btn-md lg:btn-md btn-secondary"
           >
@@ -189,10 +253,12 @@ const AbsenceTable: React.FC = () => {
           </button>
         </div>
       </div>
+      {/* Table for displaying absences */}
       <div className="max-h-96 overflow-y-auto overflow-x-auto bg-base-200 shadow-lg rounded-lg">
         <table className="table w-full">
           <thead className="sticky top-0 bg-base-300">
-          <tr>
+            <tr>
+              {/* Render headers with filter inputs */}
               {Object.keys(keyMapping).map((header) => (
                 <th key={header} className="w-1/5">
                   <div>
@@ -212,8 +278,9 @@ const AbsenceTable: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredData.length > 0 ? (
-              filteredData.map((item) => (
+            {/* Render data rows or a message if no data is available */}
+            {data.length > 0 ? (
+              data.map((item) => (
                 <AbsenceRow
                   key={item.absenceId}
                   item={item}
@@ -231,19 +298,44 @@ const AbsenceTable: React.FC = () => {
           </tbody>
         </table>
       </div>
-
+      {/* Pagination controls */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          className="btn btn-primary"
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          Anterior
+        </button>
+        <span>
+          Página {currentPage} de {Math.ceil(totalRecords / recordsPerPage)}
+        </span>
+        <button
+          className="btn btn-primary"
+          onClick={() =>
+            setCurrentPage((prev) =>
+              prev < Math.ceil(totalRecords / recordsPerPage) ? prev + 1 : prev
+            )
+          }
+          disabled={currentPage === Math.ceil(totalRecords / recordsPerPage)}
+        >
+          Siguiente
+        </button>
+      </div>
+      {/* Edit modal */}
       <input type="checkbox" id="edit-absence-modal" className="modal-toggle" />
-      <div className="modal">
+      <div className={`modal ${isModalOpen ? 'modal-open' : ''}`}>
         <div className="modal-box">
           <h3 className="font-bold text-lg">Editar Ausencia</h3>
+          {/* Input fields for editing absence */}
           <input
             type="text"
             placeholder="Nombre"
             className="input input-bordered w-full mb-4"
-            value={editingAbsence?.name || ''}
+            value={editingAbsence?.employeeName || ''}
             onChange={(e) =>
               setEditingAbsence((prev) =>
-                prev ? { ...prev, name: e.target.value } : prev
+                prev ? { ...prev, employeeName: e.target.value } : prev
               )
             }
           />
@@ -296,13 +388,20 @@ const AbsenceTable: React.FC = () => {
               )
             }
           />
+          {/* Modal action buttons */}
           <div className="modal-action">
-            <button className="btn btn-primary" onClick={handleUpdateAbsence}>
+            <button
+              className="btn btn-primary"
+              onClick={async () => {
+                await handleUpdateAbsence();
+                closeModal();
+              }}
+            >
               Guardar
             </button>
-            <label htmlFor="edit-absence-modal" className="btn">
+            <button className="btn" onClick={closeModal}>
               Cancelar
-            </label>
+            </button>
           </div>
         </div>
       </div>
