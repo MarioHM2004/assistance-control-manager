@@ -1,4 +1,4 @@
-import AbsenceTypesTable from '../components/tables/AbsenceTypesTable';
+import AbsenceTypesTable from '../components/tables/absence_type_table/AbsenceTypesTable';
 
 const AbsenceTypes: React.FC = () => {
   return (
