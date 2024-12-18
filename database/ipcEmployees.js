@@ -9,6 +9,7 @@ function handleGetEmployees(dbConnection) {
 
     const cachedEmployees = cache.get("employees");
     if (cachedEmployees) {
+      console.log("[CACHE] Served 'employees' from cache");
       return cachedEmployees;
     }
 
@@ -42,6 +43,7 @@ function handleAddEmployees(dbConnection) {
       );
 
       cache.invalidate("employees");
+      cache.invalidate("employee-ranking"); // Invalidate ranking cache
 
       return result.insertId;
     } catch (error) {
@@ -81,6 +83,7 @@ function handleEditEmployees(dbConnection) {
       }
 
       cache.invalidate("employees");
+      cache.invalidate("employee-ranking"); // Invalidate ranking cache
 
       return result.affectedRows;
     } catch (error) {
@@ -116,10 +119,53 @@ function handleDeleteEmployees(dbConnection) {
       }
 
       cache.invalidate("employees");
+      cache.invalidate("employee-ranking"); // Invalidate ranking cache
 
       return result.affectedRows;
     } catch (error) {
       console.error("Error deleting employee:", error.message);
+      throw error;
+    }
+  });
+}
+
+function handleGetEmployeeRanking(dbConnection) {
+  ipcMain.handle("get-employee-ranking", async (event, { startDate, endDate }) => {
+    if (!dbConnection) {
+      throw new Error("Database not initialized");
+    }
+
+    // Generate cache key using startDate and endDate
+    const cacheKey = `employee-ranking-${startDate}-${endDate}`;
+    const cachedRanking = cache.get(cacheKey);
+
+    if (cachedRanking) {
+      console.log(`[CACHE] Served "${cacheKey}" from cache`);
+      return cachedRanking;
+    }
+
+    try {
+      const query = `
+        SELECT
+          Employees.EMPLOYEE_ID AS employeeId,
+          Employees.NAME AS employeeName,
+          COUNT(Absences.ABSENCE_ID) AS absenceCount,
+          SUM(Absences.HOURS_ABSENT) AS totalHoursAbsent
+        FROM Absences
+        JOIN Employees ON Absences.EMPLOYEE_ID = Employees.EMPLOYEE_ID
+        WHERE Absences.ABSENCE_DATE BETWEEN ? AND ?
+        GROUP BY Employees.EMPLOYEE_ID, Employees.NAME
+        ORDER BY totalHoursAbsent DESC
+      `;
+
+      const [results] = await dbConnection.execute(query, [startDate, endDate]);
+
+      // Store results in cache
+      cache.set(cacheKey, results);
+
+      return results;
+    } catch (error) {
+      console.error("Error getting employee ranking:", error.message);
       throw error;
     }
   });
@@ -130,6 +176,7 @@ function handleEmployees(dbConnection) {
   handleAddEmployees(dbConnection);
   handleEditEmployees(dbConnection);
   handleDeleteEmployees(dbConnection);
+  handleGetEmployeeRanking(dbConnection);
 }
 
 module.exports = { handleEmployees };

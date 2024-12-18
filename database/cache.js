@@ -39,6 +39,15 @@ class Cache {
     }
   }
 
+  invalidatePrefix(prefix) {
+    for (let key of this.cache.keys()) {
+      if (key.startsWith(prefix)) {
+        this.cache.delete(key);
+        console.log(`[CACHE] Key "${key}" invalidated due to prefix match`);
+      }
+    }
+  }
+
   // Clear all cache
   clear() {
     this.cache.clear();

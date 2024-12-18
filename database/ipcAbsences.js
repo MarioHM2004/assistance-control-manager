@@ -130,6 +130,7 @@ function handleGetAllAbsences(dbConnection) {
       `;
 
       const [results] = await dbConnection.execute(query, params);
+      console.log('Exported absences:', results.length);
 
       return results;
     } catch (error) {
@@ -162,6 +163,8 @@ function handleCreateAbsence(dbConnection) {
       ]);
 
       cache.invalidate("absences");
+      cache.invalidatePrefix("employee-ranking-"); // Invalidar ranking de empleados
+      console.log("[CACHE] Invalidated 'absences' and 'employee-ranking'");
       return result.insertId;
     } catch (error) {
       console.error("Error creating absence:", error.message);
@@ -191,6 +194,8 @@ function handleEditAbsence(dbConnection) {
       ]);
 
       cache.invalidate("absences");
+      cache.invalidatePrefix("employee-ranking-"); // Invalidar ranking de empleados
+      console.log("[CACHE] Invalidated 'absences' and 'employee-ranking'");
       return result.affectedRows > 0 ? 1 : 0;
     } catch (error) {
       console.error("Error editing absence:", error.message);
@@ -210,6 +215,8 @@ function handleDeleteAbsence(dbConnection) {
       const [result] = await dbConnection.execute(query, [id]);
 
       cache.invalidate("absences");
+      cache.invalidatePrefix("employee-ranking-"); // Invalidar ranking de empleados
+      console.log("[CACHE] Invalidated 'absences' and 'employee-ranking's");
       return result.affectedRows > 0 ? 1 : 0;
     } catch (error) {
       console.error("Error deleting absence:", error.message);
