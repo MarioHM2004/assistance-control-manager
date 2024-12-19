@@ -1,9 +1,11 @@
-import AbsenceTable from '../components/tables/AbsenceTable';
+import AbsenceTable from '../components/tables/absence_table/AbsenceTable';
+import EmployeeRankingTable from '../components/tables/EmployeeRankingTable';
 
 const Dashboard: React.FC = () => {
   return (
-    <div>
+    <div className='container mx-auto'>
       <AbsenceTable />
+      <EmployeeRankingTable />
     </div>
   );
 };

@@ -6,7 +6,7 @@ import { Layout } from './components/navBar/Layout';
 import { AuthProvider } from './components/auth/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import reportWebVitals from './reportWebVitals';
-import { Spinner } from './components/assets/Spinner';
+import { Spinner } from './components/utils/Spinner';
 
 const Login = React.lazy(() => import('./pages/Login'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));

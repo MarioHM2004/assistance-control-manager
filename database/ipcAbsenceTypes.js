@@ -51,6 +51,53 @@ function handleAddAbsenceType(dbConnection) {
   });
 }
 
+function handleEditAbsenceType(dbConnection) {
+  ipcMain.handle("edit-absence-type", async (event, absenceType) => {
+    if (!dbConnection) {
+      throw new Error("Database not initialized");
+    }
+
+    if (!absenceType || !absenceType.absenceTypeId || !absenceType.newTypeName) {
+      throw new Error("Missing required fields: absenceTypeId or newTypeName");
+    }
+
+    try {
+      const [exists] = await dbConnection.execute(
+        "SELECT 1 FROM AbsenceTypes WHERE ABSENCE_TYPE_ID = ?",
+        [absenceType.absenceTypeId]
+      );
+
+      if (exists.length === 0) {
+        throw new Error(
+          "No se encontró un tipo de falta con el ID proporcionado."
+        );
+      }
+
+      const [result] = await dbConnection.execute(
+        "UPDATE AbsenceTypes SET TYPE = ? WHERE ABSENCE_TYPE_ID = ?",
+        [absenceType.newTypeName, absenceType.absenceTypeId]
+      );
+
+      if (result.affectedRows === 0) {
+        throw new Error(
+          "No se realizaron cambios. Es posible que el nuevo nombre sea igual al actual."
+        );
+      }
+
+      cache.invalidate("absenceTypes");
+
+      console.log(
+        `[UPDATE] AbsenceType with ID ${absenceType.absenceTypeId} updated to "${absenceType.newTypeName}".`
+      );
+
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error("Error editing absence type:", error.message);
+      throw error;
+    }
+  });
+}
+
 function handleDeleteAbsenceType(dbConnection) {
   ipcMain.handle("delete-absence-type", async (event, absenceType) => {
     if (!dbConnection) {
@@ -91,6 +138,7 @@ function handleDeleteAbsenceType(dbConnection) {
 function handleAbsenceTypes(dbConnection) {
   handleGetAbsenceTypes(dbConnection);
   handleAddAbsenceType(dbConnection);
+  handleEditAbsenceType(dbConnection);
   handleDeleteAbsenceType(dbConnection);
 }
 

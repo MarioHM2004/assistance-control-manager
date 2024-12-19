@@ -32,7 +32,7 @@ function handleGetAbsences(dbConnection) {
         queryParams.push(filters["Horas faltadas"]);
       }
       if (filters.Fecha) {
-        whereClauses.push('DATE_FORMAT(Absences.ABSENCE_DATE, "%Y-%m-%d") LIKE ?');
+        whereClauses.push("DATE_FORMAT(Absences.ABSENCE_DATE, '%Y-%m-%d') LIKE ?");
         queryParams.push(`${filters.Fecha}%`);
       }
     }
@@ -43,11 +43,11 @@ function handleGetAbsences(dbConnection) {
       const query = `
         SELECT
           Absences.ABSENCE_ID AS absenceId,
-          Employees.NAME AS employeeName, -- Alias claro para evitar conflictos
+          Employees.NAME AS employeeName,
           AbsenceTypes.TYPE AS absenceType,
           Absences.DESCRIPTION AS description,
           Absences.HOURS_ABSENT AS hoursAbsent,
-          Absences.ABSENCE_DATE AS date
+          DATE_FORMAT(Absences.ABSENCE_DATE, '%Y-%m-%d') AS date
         FROM Absences
         JOIN Employees ON Absences.EMPLOYEE_ID = Employees.EMPLOYEE_ID
         JOIN AbsenceTypes ON Absences.ABSENCE_TYPE_ID = AbsenceTypes.ABSENCE_TYPE_ID
@@ -130,6 +130,7 @@ function handleGetAllAbsences(dbConnection) {
       `;
 
       const [results] = await dbConnection.execute(query, params);
+      console.log('Exported absences:', results.length);
 
       return results;
     } catch (error) {
@@ -162,6 +163,8 @@ function handleCreateAbsence(dbConnection) {
       ]);
 
       cache.invalidate("absences");
+      cache.invalidatePrefix("employee-ranking-"); // Invalidar ranking de empleados
+      console.log("[CACHE] Invalidated 'absences' and 'employee-ranking'");
       return result.insertId;
     } catch (error) {
       console.error("Error creating absence:", error.message);
@@ -191,6 +194,8 @@ function handleEditAbsence(dbConnection) {
       ]);
 
       cache.invalidate("absences");
+      cache.invalidatePrefix("employee-ranking-"); // Invalidar ranking de empleados
+      console.log("[CACHE] Invalidated 'absences' and 'employee-ranking'");
       return result.affectedRows > 0 ? 1 : 0;
     } catch (error) {
       console.error("Error editing absence:", error.message);
@@ -210,6 +215,8 @@ function handleDeleteAbsence(dbConnection) {
       const [result] = await dbConnection.execute(query, [id]);
 
       cache.invalidate("absences");
+      cache.invalidatePrefix("employee-ranking-"); // Invalidar ranking de empleados
+      console.log("[CACHE] Invalidated 'absences' and 'employee-ranking's");
       return result.affectedRows > 0 ? 1 : 0;
     } catch (error) {
       console.error("Error deleting absence:", error.message);
