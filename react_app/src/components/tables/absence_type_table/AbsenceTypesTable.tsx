@@ -3,19 +3,20 @@ import { AbsenceType } from '../../models/types';
 import AbsenceTypeRow from './AbsenceTypeRow';
 import TableHeader from '../generic_components/TableHeaderFromFront';
 import AddEditModal from '../generic_components/AddEditModal';
+import WarningModal from '../../utils/WarningModal';
 
 const AbsenceTypesTable: React.FC = () => {
   const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
   const [filter, setFilter] = useState('');
   const [newAbsenceType, setNewAbsenceType] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+  const [editingAbsenceTypeId, setEditingAbsenceTypeId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAbsenceTypes = useCallback(async () => {
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'get-absence-types'
-      );
+      const result = await window.electron.ipcRenderer.invoke('get-absence-types');
       setAbsenceTypes(result);
     } catch (error) {
       console.error('Error fetching absence types:', error);
@@ -35,10 +36,9 @@ const AbsenceTypesTable: React.FC = () => {
 
   const handleAddAbsenceType = useCallback(async () => {
     try {
-      const result = await window.electron.ipcRenderer.invoke(
-        'add-absence-type',
-        { type: newAbsenceType.trim() }
-      );
+      const result = await window.electron.ipcRenderer.invoke('add-absence-type', {
+        type: newAbsenceType.trim(),
+      });
       if (result > 0) {
         setAbsenceTypes((prev) => [
           ...prev,
@@ -52,17 +52,51 @@ const AbsenceTypesTable: React.FC = () => {
     }
   }, [newAbsenceType]);
 
+  const handleEditAbsenceType = useCallback((id: number, type: string) => {
+    setEditingAbsenceTypeId(id);
+    setNewAbsenceType(type);
+    setIsWarningModalOpen(true); // Mostrar la advertencia primero
+  }, []);
+
+  const handleConfirmWarning = useCallback(() => {
+    setIsWarningModalOpen(false);
+    setIsModalOpen(true); // Abrir el modal de edición después de confirmar
+  }, []);
+
+  const handleUpdateAbsenceType = useCallback(async () => {
+    if (editingAbsenceTypeId === null) return;
+
+    try {
+      const result = await window.electron.ipcRenderer.invoke('edit-absence-type', {
+        absenceTypeId: editingAbsenceTypeId,
+        newTypeName: newAbsenceType.trim(),
+      });
+
+      if (result) {
+        setAbsenceTypes((prev) =>
+          prev.map((type) =>
+            type.ABSENCE_TYPE_ID === editingAbsenceTypeId
+              ? { ...type, TYPE: newAbsenceType.trim() }
+              : type
+          )
+        );
+        setNewAbsenceType('');
+        setEditingAbsenceTypeId(null);
+        setIsModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error updating absence type:', error);
+    }
+  }, [editingAbsenceTypeId, newAbsenceType]);
+
   const handleDeleteAbsenceType = useCallback(async (id: number) => {
     try {
       setError(null);
-      const result = await window.electron.ipcRenderer.invoke(
-        'delete-absence-type',
-        { absenceTypeId: id }
-      );
+      const result = await window.electron.ipcRenderer.invoke('delete-absence-type', {
+        absenceTypeId: id,
+      });
       if (result > 0) {
-        setAbsenceTypes((prev) =>
-          prev.filter((type) => type.ABSENCE_TYPE_ID !== id)
-        );
+        setAbsenceTypes((prev) => prev.filter((type) => type.ABSENCE_TYPE_ID !== id));
       }
     } catch (error) {
       if (
@@ -89,7 +123,11 @@ const AbsenceTypesTable: React.FC = () => {
       <div className="pb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Lista de Tipos de Falta</h1>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setIsModalOpen(true);
+            setEditingAbsenceTypeId(null);
+            setNewAbsenceType('');
+          }}
           className="btn btn-primary"
         >
           Añadir Tipo de Falta
@@ -108,6 +146,7 @@ const AbsenceTypesTable: React.FC = () => {
                 <AbsenceTypeRow
                   key={`absence-type-${type.ABSENCE_TYPE_ID}`}
                   type={type}
+                  onEdit={handleEditAbsenceType}
                   onDelete={handleDeleteAbsenceType}
                 />
               ))
@@ -128,7 +167,7 @@ const AbsenceTypesTable: React.FC = () => {
       )}
       <AddEditModal
         isOpen={isModalOpen}
-        title="Añadir Tipo de Falta"
+        title={editingAbsenceTypeId ? 'Editar Tipo de Falta' : 'Añadir Tipo de Falta'}
         fields={[
           {
             label: 'Nombre del tipo de falta',
@@ -137,9 +176,20 @@ const AbsenceTypesTable: React.FC = () => {
             onChange: (value: string | number) => setNewAbsenceType(String(value)),
           },
         ]}
-        onSave={handleAddAbsenceType}
-        onClose={() => setIsModalOpen(false)}
+        onSave={editingAbsenceTypeId ? handleUpdateAbsenceType : handleAddAbsenceType}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingAbsenceTypeId(null);
+          setNewAbsenceType('');
+        }}
         isDisabled={!newAbsenceType.trim()}
+      />
+      <WarningModal
+        isOpen={isWarningModalOpen}
+        title="Advertencia"
+        message="Modificar este tipo de falta afectará a todas las faltas relacionadas. ¿Estás seguro que quieres continuar?"
+        onConfirm={handleConfirmWarning}
+        onClose={() => setIsWarningModalOpen(false)}
       />
     </div>
   );
