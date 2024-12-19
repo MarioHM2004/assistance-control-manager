@@ -45,11 +45,12 @@ const AbsenceTable: React.FC = () => {
 
         const processedData = absences.map((absence: Absence) => ({
           ...absence,
-          date: new Date(absence.date).toISOString().split('T')[0], // Formatear fecha
+          date: absence.date,
+
         }));
 
-        setData(processedData); // Establecer datos de la tabla
-        setTotalRecords(totalCount); // Actualizar el total de registros
+        setData(processedData);
+        setTotalRecords(totalCount);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -76,7 +77,7 @@ const AbsenceTable: React.FC = () => {
         const types: AbsenceType[] = await window.electron.ipcRenderer.invoke(
           'get-absence-types'
         );
-        setAbsenceTypes(types); // Actualizar los tipos de falta en el estado
+        setAbsenceTypes(types);
       } catch (error) {
         console.error('Error fetching absence types:', error);
       }
@@ -107,7 +108,7 @@ const AbsenceTable: React.FC = () => {
         );
         if (result > 0) {
           console.log('Ausencia eliminada correctamente');
-          fetchData(filters); // Refrescar datos después de la eliminación
+          fetchData(filters);
         }
       } catch (error) {
         console.error('Error deleting absence:', error);
@@ -134,7 +135,7 @@ const AbsenceTable: React.FC = () => {
 
       const absenceData = {
         ...editingAbsence,
-        absenceTypeId: selectedAbsenceType.ABSENCE_TYPE_ID, // Mapear ID del tipo de falta
+        absenceTypeId: selectedAbsenceType.ABSENCE_TYPE_ID,
       };
 
       try {
@@ -144,8 +145,8 @@ const AbsenceTable: React.FC = () => {
         );
         if (result > 0) {
           console.log('Ausencia actualizada correctamente');
-          fetchData(filters); // Refrescar datos después de la actualización
-          setEditingAbsence(null); // Reiniciar ausencia en edición
+          fetchData(filters);
+          setEditingAbsence(null);
         }
       } catch (error) {
         console.error('Error updating absence:', error);
@@ -256,7 +257,7 @@ const AbsenceTable: React.FC = () => {
                 prev ? { ...prev, absenceType: value as string } : prev
               ),
             options: absenceTypes.map((type) => ({
-              id: type.ABSENCE_TYPE_ID, // Usa ABSENCE_TYPE_ID como valor del select
+              id: type.ABSENCE_TYPE_ID,
               label: type.TYPE,
             })),
           },

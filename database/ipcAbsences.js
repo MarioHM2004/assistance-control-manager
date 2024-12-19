@@ -32,7 +32,7 @@ function handleGetAbsences(dbConnection) {
         queryParams.push(filters["Horas faltadas"]);
       }
       if (filters.Fecha) {
-        whereClauses.push('DATE_FORMAT(Absences.ABSENCE_DATE, "%Y-%m-%d") LIKE ?');
+        whereClauses.push("DATE_FORMAT(Absences.ABSENCE_DATE, '%Y-%m-%d') LIKE ?");
         queryParams.push(`${filters.Fecha}%`);
       }
     }
@@ -43,11 +43,11 @@ function handleGetAbsences(dbConnection) {
       const query = `
         SELECT
           Absences.ABSENCE_ID AS absenceId,
-          Employees.NAME AS employeeName, -- Alias claro para evitar conflictos
+          Employees.NAME AS employeeName,
           AbsenceTypes.TYPE AS absenceType,
           Absences.DESCRIPTION AS description,
           Absences.HOURS_ABSENT AS hoursAbsent,
-          Absences.ABSENCE_DATE AS date
+          DATE_FORMAT(Absences.ABSENCE_DATE, '%Y-%m-%d') AS date
         FROM Absences
         JOIN Employees ON Absences.EMPLOYEE_ID = Employees.EMPLOYEE_ID
         JOIN AbsenceTypes ON Absences.ABSENCE_TYPE_ID = AbsenceTypes.ABSENCE_TYPE_ID
