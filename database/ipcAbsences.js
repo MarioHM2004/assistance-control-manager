@@ -121,7 +121,7 @@ function handleGetAllAbsences(dbConnection) {
           AbsenceTypes.TYPE as absenceType,
           Absences.DESCRIPTION as description,
           Absences.HOURS_ABSENT as hoursAbsent,
-          Absences.ABSENCE_DATE as date
+          DATE_FORMAT(Absences.ABSENCE_DATE, '%Y-%m-%d') AS date
         FROM Absences
         JOIN Employees ON Absences.EMPLOYEE_ID = Employees.EMPLOYEE_ID
         JOIN AbsenceTypes ON Absences.ABSENCE_TYPE_ID = AbsenceTypes.ABSENCE_TYPE_ID
