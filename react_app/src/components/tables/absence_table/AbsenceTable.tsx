@@ -20,7 +20,7 @@ const AbsenceTable: React.FC = () => {
     Fecha: '',
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 10;
+  const recordsPerPage = 20;
 
   const keyMapping = useMemo(
     () => ({
@@ -185,7 +185,7 @@ const AbsenceTable: React.FC = () => {
           </button>
         </div>
       </div>
-      <div className="max-h-96 overflow-y-auto overflow-x-auto bg-base-200 shadow-lg rounded-lg">
+      <div className="max-h-[600px] overflow-y-auto overflow-x-auto bg-base-200 shadow-lg rounded-lg">
         <table className="table w-full">
           <TableHeader
             filters={filters}
