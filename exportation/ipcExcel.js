@@ -21,7 +21,7 @@ function handleExportation() {
       const detailWorksheet = workbook.addWorksheet("Faltas");
 
       detailWorksheet.columns = [
-        { header: 'Nombre', key: 'name', width: 25 },
+        { header: 'Nombre', key: 'name', width: 30 },
         { header: 'Tipo de Falta', key: 'absenceType', width: 20 },
         { header: 'Descripción', key: 'description', width: 35 },
         { header: 'Horas Faltadas', key: 'hoursAbsent', width: 20 },
@@ -39,14 +39,20 @@ function handleExportation() {
       });
 
       data.forEach(item => {
-        detailWorksheet.addRow({
+        const row = detailWorksheet.addRow({
           name: item.name,
           absenceType: item.absenceType,
           description: item.description,
           hoursAbsent: item.hoursAbsent,
           date: item.date,
         });
+
+        row.eachCell((cell) => {
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        });
       });
+
+
 
       // Create a sheet for each employee with the summary of hours
       const employees = data.reduce((acc, item) => {
@@ -58,7 +64,7 @@ function handleExportation() {
       }, {});
 
       Object.entries(employees).forEach(([employeeName, absences]) => {
-        const employeeWorksheet = workbook.addWorksheet(employeeName.substring(0, 31)); // Limit to 31 characters
+        const employeeWorksheet = workbook.addWorksheet(employeeName.substring(0, 31));
 
         employeeWorksheet.columns = [
           { header: 'Tipo de Falta', key: 'absenceType', width: 20 },
@@ -85,8 +91,13 @@ function handleExportation() {
         }, {});
 
         Object.entries(hoursByType).forEach(([type, hours]) => {
-          employeeWorksheet.addRow({ absenceType: type, hoursAbsent: hours });
+          const row = employeeWorksheet.addRow({ absenceType: type, hoursAbsent: hours });
+
+          row.eachCell((cell) => {
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          });
         });
+
 
         // Add row with total hours absent
         const totalRow = employeeWorksheet.addRow({
