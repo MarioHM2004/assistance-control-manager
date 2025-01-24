@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Employees } from '../../models/types';
 import TableHeader from '../generic_components/TableHeaderFromFront';
-import AddEditModal from '../generic_components/AddEditModal';
+import AddEditModal from '../../modals/AddEditModal';
 import EmployeeRow from './EmployeeRow';
 
 export const EmployeesTable: React.FC = () => {

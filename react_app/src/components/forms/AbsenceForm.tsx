@@ -1,29 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { AbsenceType, Employees } from '../models/types';
 import { useNavigate } from 'react-router-dom';
+import AddEditModal from '../modals/AddEditModal';
 
-// AbsenceForm component allows users to register an absence for an employee.
 export const AbsenceForm: React.FC = () => {
-  const navigate = useNavigate(); // Hook for navigation
-  const [names, setNames] = useState<Employees[]>([]); // Stores list of employees
-  const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]); // Stores list of absence types
+  const navigate = useNavigate();
+  const [names, setNames] = useState<Employees[]>([]);
+  const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
   const [formData, setFormData] = useState({
-    name: '', // Selected employee name
-    absenceType: '', // Selected absence type
-    description: '', // Description of the absence
-    hoursAbsent: 0.5, // Number of hours absent
-    date: '', // Date of the absence
+    name: '',
+    absenceType: '',
+    description: '',
+    hoursAbsent: 0.5,
+    date: '',
   });
 
-  // Fetch employee names and absence types from backend on component mount
+  const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch employees list
         const namesResponse = await window.electron.ipcRenderer.invoke(
           'get-employees'
         );
-        // Fetch absence types list
         const typesResponse = await window.electron.ipcRenderer.invoke(
           'get-absence-types'
         );
@@ -37,7 +37,6 @@ export const AbsenceForm: React.FC = () => {
     fetchData();
   }, []);
 
-  // Handles changes in form inputs and updates state
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -45,67 +44,63 @@ export const AbsenceForm: React.FC = () => {
   ) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value, // Dynamically update formData field
+      [e.target.name]: e.target.value,
     });
   };
 
-  // Submits the form data to the backend
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent page reload on form submission
+    e.preventDefault();
 
-    // Find the selected employee and absence type from the lists
+    const currentDate = new Date();
+    const selectedDate = new Date(formData.date);
+
+    if (
+      selectedDate.getFullYear() !== currentDate.getFullYear() ||
+      selectedDate.getMonth() !== currentDate.getMonth()
+    ) {
+      setShowModal(true); // Mostrar el modal de confirmación
+      return;
+    }
+
+    await submitForm();
+  };
+
+  const submitForm = async () => {
     const selectedEmployee = names.find((name) => name.NAME === formData.name);
     const selectedAbsenceType = absenceTypes.find(
       (type) => type.TYPE === formData.absenceType
     );
 
-    // Validate if selected employee exists
     if (!selectedEmployee) {
-      console.error('Empleado no encontrado');
-      alert('Selecciona un empleado válido');
+      alert("Selecciona un empleado válido");
       return;
     }
 
-    // Validate if selected absence type exists
     if (!selectedAbsenceType) {
-      console.error('Tipo de falta no encontrado');
-      alert('Selecciona un tipo de falta válido');
+      alert("Selecciona un tipo de falta válido");
       return;
     }
 
-    // Formats the date input into YYYY-MM-DD
-    const formatDate = (date: string): string | null => {
-      return date ? new Date(date).toISOString().split('T')[0] : null;
-    };
-
-    // Constructs the final absence data to be sent to backend
     const absenceData = {
       ...formData,
-      employeeId: selectedEmployee?.EMPLOYEE_ID || null,
-      absenceTypeId: selectedAbsenceType?.ABSENCE_TYPE_ID || null,
-      date: formatDate(formData.date),
+      employeeId: selectedEmployee.EMPLOYEE_ID,
+      absenceTypeId: selectedAbsenceType.ABSENCE_TYPE_ID,
+      date: new Date(formData.date).toISOString().split('T')[0],
       hoursAbsent: parseFloat(formData.hoursAbsent.toString()),
     };
 
-    console.log('Datos enviados:', absenceData);
-
-    // Ensure all required parameters are present
-    if (!absenceData.employeeId || !absenceData.absenceTypeId) {
-      console.error('Faltan parámetros requeridos');
-      alert('Completa todos los campos requeridos');
-      return;
-    }
-
     try {
-      // Send absence data to backend
+      setIsSubmitting(true);
       await window.electron.ipcRenderer.invoke('create-absence', absenceData);
-      navigate('/dashboard'); // Navigate to dashboard on success
+      navigate('/dashboard');
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error enviando el formulario:', error);
+      alert('Hubo un error al enviar los datos. Inténtalo de nuevo.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Filters employee names based on user input in the form
   const filteredNames = names.filter(
     (name) =>
       name.NAME && name.NAME.toLowerCase().includes(formData.name.toLowerCase())
@@ -116,7 +111,19 @@ export const AbsenceForm: React.FC = () => {
       <div className="container mx-auto pt-8 xl:pr-20 xl:pl-20 sm:pl-2 pb-8 max-w-2xl bg-base-200 shadow-lg rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-4 text-center">Registrar Falta</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Employee selection input with autocomplete */}
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Fecha</span>
+            </label>
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleInputChange}
+              className="input input-bordered w-full"
+              required
+            />
+          </div>
           <div className="form-control">
             <label className="label">
               <span className="label-text">Empleado</span>
@@ -153,7 +160,6 @@ export const AbsenceForm: React.FC = () => {
               </ul>
             )}
           </div>
-
           {/* Absence type dropdown */}
           <div className="form-control">
             <label className="label">
@@ -214,28 +220,23 @@ export const AbsenceForm: React.FC = () => {
               })}
             </select>
           </div>
-
-          {/* Absence date picker */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Fecha</span>
-            </label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              className="input input-bordered w-full"
-              required
-            />
-          </div>
-
-          {/* Submit button */}
           <button type="submit" className="btn btn-primary w-full">
             Añadir Falta
           </button>
         </form>
       </div>
+      <AddEditModal
+        isOpen={showModal}
+        title="Confirmar Fecha"
+        message='La fecha seleccionada no es del mes o año actual. ¿Estás seguro de que quieres continuar?'
+        fields={[]}
+        onSave={async () => {
+          setShowModal(false);
+          await submitForm();
+        }}
+        onClose={() => setShowModal(false)}
+        isDisabled={isSubmitting}
+      />
     </div>
   );
 };

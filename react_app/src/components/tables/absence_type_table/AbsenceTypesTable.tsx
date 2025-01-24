@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AbsenceType } from '../../models/types';
 import AbsenceTypeRow from './AbsenceTypeRow';
 import TableHeader from '../generic_components/TableHeaderFromFront';
-import AddEditModal from '../generic_components/AddEditModal';
-import WarningModal from '../../utils/WarningModal';
+import AddEditModal from '../../modals/AddEditModal';
+import WarningModal from '../../modals/WarningModal';
 
 const AbsenceTypesTable: React.FC = () => {
   const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);

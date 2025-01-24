@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Absence, AbsenceType } from '../../models/types';
-import AddEditModal from '../generic_components/AddEditModal';
+import AddEditModal from '../../modals/AddEditModal';
 import TableHeader from '../generic_components/TableHeaderFromBack';
 import AbsenceRow from './AbsenceRow';
 import debounce from '../../utils/debounce';

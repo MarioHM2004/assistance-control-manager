@@ -19,7 +19,7 @@ function handleLoginAdmin(dbConnection) {
         admin = rows[0]; // MySQL returns an array of rows
 
         if (!admin) {
-          return { success: false, message: 'Admin not found' };
+          return { success: false, message: 'usuario o contraseña incorrectos' };
         }
 
         // Cache the admin data
@@ -30,10 +30,10 @@ function handleLoginAdmin(dbConnection) {
       const isPasswordValid = await bcrypt.compare(password, admin.password);
 
       if (!isPasswordValid) {
-        return { success: false, message: 'Invalid password' };
+        return { success: false, message: 'usuario o contraseña incorrectos' };
       }
 
-      return { success: true, message: 'Login successful', adminId: admin.id };
+      return { success: true, message: 'Inicio de sesion satisfactorio', adminId: admin.id };
     } catch (error) {
       console.error('Error during admin login:', error.message);
       throw error;

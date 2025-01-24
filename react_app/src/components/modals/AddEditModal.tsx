@@ -10,6 +10,7 @@ interface AddEditModalProps {
     onChange: (value: string | number) => void;
     options?: { id: number; label: string }[]; // Para selects
   }[];
+  message?: string;
   onSave: () => void;
   onClose: () => void;
   isDisabled: boolean;
@@ -19,6 +20,7 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
   isOpen,
   title,
   fields,
+  message,
   onSave,
   onClose,
   isDisabled,
@@ -40,6 +42,7 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
     <div className="modal modal-open">
       <div className="modal-box">
         <h2 className="font-bold text-lg pb-4">{title}</h2>
+        {message && <p>{message}</p>}
         {fields.map((field, index) => (
           <div key={index} className="mb-4">
             <label className="block font-medium mb-1">{field.label}</label>
