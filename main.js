@@ -12,6 +12,7 @@ let dbConnection;
 
 const isDev = !app.isPackaged;
 
+// this should be moved to an .env file
 async function connectToDatabase() {
   try {
     dbConnection = await mysql.createConnection({
