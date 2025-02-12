@@ -20,9 +20,9 @@ async function connectToDatabase() {
       password: 'acm_password',
       database: 'acm',
     });
-    console.log('Conexión a MySQL establecida.');
+    console.log('Connection to SQL stablished.');
   } catch (error) {
-    console.error('Error conectándose a MySQL:', error.message);
+    console.error('Error connecting to MySQL:', error.message);
     app.quit();
   }
 }
